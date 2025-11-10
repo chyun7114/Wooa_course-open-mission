@@ -14,7 +14,7 @@ export const drizzleProvider = {
     const databaseUrl = configService.get<string>('DATABASE_URL');
     
     if (!databaseUrl) {
-      throw new Error('DATABASE_URL is not defined in environment variables');
+      throw new Error('DATABASE_URL이 잘못됐습니다.');
     }
 
     const client = postgres(databaseUrl, { 
