@@ -2,8 +2,8 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { RedisModule } from './redis/redis.module';
-import { DrizzleModule } from './db/drizzle.module';
+import { RedisModule } from './common/redis/redis.module';
+import { DrizzleModule } from './common/db/drizzle.module';
 
 @Module({
   imports: [
