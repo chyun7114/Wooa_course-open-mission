@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../core/constants/game_constants.dart';
+import '../../core/constants/game_constants.dart';
 
 class CellWidget extends StatelessWidget {
   final int value;
