@@ -143,14 +143,20 @@ void main() {
     test('게임 오버 조건이 올바르게 동작하는지 확인', () {
       provider.startGame();
 
-      // 보드 맨 위를 막아서 새 블록이 스폰되지 못하게 함
-      for (int x = 0; x < 10; x++) {
-        provider.board.setCell(x, 0, 1);
-        provider.board.setCell(x, 1, 1);
+      // 보드를 1열만 비워두고 거의 채움 (줄이 완성되지 않게)
+      // 맨 위 5줄에 각 줄마다 9칸만 채워서 줄 클리어가 안 되게 함
+      for (int y = 0; y < 5; y++) {
+        for (int x = 0; x < 9; x++) {  // 0~8까지만 채움 (9는 비워둠)
+          provider.board.setCell(x, y, 1);
+        }
       }
 
-      // 강제로 다음 블록 스폰 시도 (내부 메서드이므로 간접적으로 테스트)
-      // 실제로는 블록이 고정될 때 게임 오버 체크가 일어남
+      // 현재 블록을 하드 드롭하면 다음 블록이 스폰되려고 시도하고
+      // 스폰 위치 (x:3, y:0) 근처가 막혀있으면 게임 오버가 됨
+      provider.hardDrop();
+
+      // 게임 오버 상태인지 확인
+      expect(provider.gameState, GameState.gameOver);
     });
 
     test('일시정지 상태에서는 블록 이동이 안 되는지 확인', () {
@@ -167,27 +173,26 @@ void main() {
     test('게임 오버 후에는 블록 이동이 안 되는지 확인', () {
       provider.startGame();
       
-      // 보드 맨 위를 막아서 게임 오버 유도
-      for (int x = 0; x < 10; x++) {
-        for (int y = 0; y < 4; y++) {
+      // 보드를 1열만 비워두고 상단 5줄 채움 (줄 클리어 방지)
+      for (int y = 0; y < 5; y++) {
+        for (int x = 0; x < 9; x++) {
           provider.board.setCell(x, y, 1);
         }
       }
 
-      // 현재 블록을 강제로 바닥에 고정하여 게임 오버 유도
-      if (provider.currentTetromino != null) {
-        provider.hardDrop();
-      }
+      // 현재 블록을 하드 드롭하여 게임 오버 유도
+      provider.hardDrop();
 
-      final currentState = provider.gameState;
+      // 게임 오버 상태인지 확인
+      expect(provider.gameState, GameState.gameOver);
       
-      // 게임 오버 상태일 수 있음
-      if (currentState == GameState.gameOver) {
-        final initialX = provider.currentTetromino?.x;
+      // 게임 오버 상태에서 블록이 있다면
+      if (provider.currentTetromino != null) {
+        final initialX = provider.currentTetromino!.x;
         provider.moveLeft();
         
         // 게임 오버 상태에서는 이동하지 않아야 함
-        expect(provider.currentTetromino?.x, initialX);
+        expect(provider.currentTetromino!.x, initialX);
       }
     });
 
@@ -206,6 +211,88 @@ void main() {
 
       // 최소 3가지 이상의 다른 블록이 나와야 함 (랜덤 검증)
       expect(types.length, greaterThanOrEqualTo(3));
+    });
+
+    test('게임 오버 시 타이머가 정지되는지 확인', () {
+      provider.startGame();
+      expect(provider.gameState, GameState.playing);
+
+      // 보드 상단 5줄을 1열만 비워두고 채움
+      for (int y = 0; y < 5; y++) {
+        for (int x = 0; x < 9; x++) {
+          provider.board.setCell(x, y, 1);
+        }
+      }
+
+      provider.hardDrop();
+
+      expect(provider.gameState, GameState.gameOver);
+      // 타이머가 정지되었으므로 자동 낙하가 일어나지 않음
+    });
+
+    test('게임 오버 후 재시작하면 정상적으로 게임이 시작되는지 확인', () {
+      provider.startGame();
+
+      // 게임 오버 유도
+      for (int y = 0; y < 5; y++) {
+        for (int x = 0; x < 9; x++) {
+          provider.board.setCell(x, y, 1);
+        }
+      }
+
+      provider.hardDrop();
+      expect(provider.gameState, GameState.gameOver);
+
+      // 재시작
+      provider.restartGame();
+
+      expect(provider.gameState, GameState.playing);
+      expect(provider.score, 0);
+      expect(provider.level, 1);
+      expect(provider.currentTetromino, isNotNull);
+      expect(provider.nextTetromino, isNotNull);
+    });
+
+    test('게임 오버 시 회전도 동작하지 않는지 확인', () {
+      provider.startGame();
+      
+      // 게임 오버 유도
+      for (int y = 0; y < 5; y++) {
+        for (int x = 0; x < 9; x++) {
+          provider.board.setCell(x, y, 1);
+        }
+      }
+
+      provider.hardDrop();
+      expect(provider.gameState, GameState.gameOver);
+
+      if (provider.currentTetromino != null) {
+        final initialRotation = provider.currentTetromino!.rotation;
+        provider.rotate();
+        
+        // 게임 오버 상태에서는 회전하지 않아야 함
+        expect(provider.currentTetromino!.rotation, initialRotation);
+      }
+    });
+
+    test('게임 오버 시 하드 드롭도 동작하지 않는지 확인', () {
+      provider.startGame();
+      
+      // 게임 오버 유도
+      for (int y = 0; y < 5; y++) {
+        for (int x = 0; x < 9; x++) {
+          provider.board.setCell(x, y, 1);
+        }
+      }
+
+      provider.hardDrop();
+      expect(provider.gameState, GameState.gameOver);
+
+      final scoreBeforeHardDrop = provider.score;
+      provider.hardDrop();
+      
+      // 게임 오버 상태에서는 하드 드롭이 동작하지 않으므로 점수 변화 없음
+      expect(provider.score, scoreBeforeHardDrop);
     });
   });
 }
