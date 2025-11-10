@@ -5,21 +5,21 @@ import * as schema from './schema';
 
 @Injectable()
 export class DrizzleService implements OnModuleInit {
-  constructor(
-    @Inject(DRIZZLE_ORM)
-    private readonly db: PostgresJsDatabase<typeof schema>,
-  ) {}
+    constructor(
+        @Inject(DRIZZLE_ORM)
+        private readonly db: PostgresJsDatabase<typeof schema>,
+    ) {}
 
-  async onModuleInit() {
-    try {
-      console.log('✅ Drizzle ORM 연결 성공');
-    } catch (error) {
-      console.error('❌ Drizzle ORM 연결 실패:', error);
-      throw error;
+    onModuleInit() {
+        try {
+            console.log('✅ Drizzle ORM 연결 성공');
+        } catch (error) {
+            console.error('❌ Drizzle ORM 연결 실패:', error);
+            throw error;
+        }
     }
-  }
 
-  getDb(): PostgresJsDatabase<typeof schema> {
-    return this.db;
-  }
+    getDb(): PostgresJsDatabase<typeof schema> {
+        return this.db;
+    }
 }

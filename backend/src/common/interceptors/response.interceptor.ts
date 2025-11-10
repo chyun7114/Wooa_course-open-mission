@@ -17,17 +17,17 @@ export class ResponseInterceptor<T>
         next: CallHandler,
     ): Observable<CommonResponse<T>> {
         return next.handle().pipe(
-            map((data) => {
+            map((data: T) => {
                 const response = context.switchToHttp().getResponse();
-                const statusCode = response.statusCode;
-                
+                const statusCode = response.statusCode as number;
+
                 // 이미 CommonResponse 형태라면 그대로 반환
                 if (data instanceof CommonResponse) {
-                    return data;
+                    return data as CommonResponse<T>;
                 }
-                
+
                 // 아니라면 CommonResponse로 래핑
-                return new CommonResponse(statusCode, data);
+                return new CommonResponse<T>(statusCode, data);
             }),
         );
     }
