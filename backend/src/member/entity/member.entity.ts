@@ -1,10 +1,9 @@
 import { pgTable, serial, text, timestamp } from 'drizzle-orm/pg-core';
+import { baseColumns } from 'src/common/db/base.entity';
 
-// 예제: Users 테이블
-export const users = pgTable('users', {
-    id: serial('id').primaryKey(),
-    email: text('email').notNull().unique(),
+export const member = pgTable('member', {
+    ...baseColumns,
+    userId: text('user_id').notNull().unique(),
+    password: text('password').notNull(),
     name: text('name').notNull(),
-    createdAt: timestamp('created_at').defaultNow().notNull(),
-    updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
