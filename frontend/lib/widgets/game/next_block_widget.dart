@@ -5,10 +5,7 @@ import 'cell_widget.dart';
 class NextBlockWidget extends StatelessWidget {
   final Tetromino? nextTetromino;
 
-  const NextBlockWidget({
-    super.key,
-    this.nextTetromino,
-  });
+  const NextBlockWidget({super.key, this.nextTetromino});
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +40,7 @@ class NextBlockWidget extends StatelessWidget {
     }
 
     final shape = nextTetromino!.shape;
-    
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: List.generate(
