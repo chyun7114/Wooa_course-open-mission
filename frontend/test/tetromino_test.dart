@@ -1,6 +1,3 @@
-/// Tetromino 모델의 단위 테스트
-/// 블록의 회전, 이동, 형태 등이 올바르게 동작하는지 검증합니다.
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/core/models/tetromino.dart';
 
@@ -30,7 +27,6 @@ void main() {
       final tetromino = Tetromino(type: TetrominoType.I);
       final shape = tetromino.shape;
       
-      // 0도 회전 상태: 가로 막대
       expect(shape[1], [1, 1, 1, 1]);
       expect(shape.length, 4);
     });
@@ -42,7 +38,6 @@ void main() {
       tetromino.rotateClockwise();
       final shape1 = tetromino.shape;
       
-      // O 블록은 회전해도 모양이 같음
       expect(shape0, shape1);
     });
     
@@ -60,7 +55,6 @@ void main() {
       tetromino.rotateClockwise();
       expect(tetromino.rotation, 3);
       
-      // 4번 회전하면 다시 0으로
       tetromino.rotateClockwise();
       expect(tetromino.rotation, 0);
     });
@@ -84,20 +78,16 @@ void main() {
     test('블록 이동이 올바르게 동작하는지 확인', () {
       final tetromino = Tetromino(type: TetrominoType.T, x: 5, y: 10);
       
-      // 왼쪽 이동
       tetromino.moveLeft();
       expect(tetromino.x, 4);
       
-      // 오른쪽 이동
       tetromino.moveRight();
       tetromino.moveRight();
       expect(tetromino.x, 6);
-      
-      // 아래로 이동
+
       tetromino.moveDown();
       expect(tetromino.y, 11);
       
-      // 위로 이동
       tetromino.moveUp();
       expect(tetromino.y, 10);
     });
@@ -111,7 +101,6 @@ void main() {
       expect(copy.x, original.x);
       expect(copy.y, original.y);
       
-      // 복사본 수정 시 원본에 영향 없어야 함
       copy.moveRight();
       copy.rotateClockwise();
       
@@ -125,7 +114,6 @@ void main() {
       final tetromino = Tetromino(type: TetrominoType.I, x: 3, y: 0);
       final positions = tetromino.positions;
       
-      // I 블록 0도 회전: 가로 막대, y=1 줄에 4개
       expect(positions.length, 4);
       expect(positions.contains(Position(3, 1)), true);
       expect(positions.contains(Position(4, 1)), true);
@@ -136,8 +124,7 @@ void main() {
     test('블록의 실제 위치(positions)가 올바른지 확인 - O 블록', () {
       final tetromino = Tetromino(type: TetrominoType.O, x: 4, y: 5);
       final positions = tetromino.positions;
-      
-      // O 블록: 2x2 정사각형
+
       expect(positions.length, 4);
       expect(positions.contains(Position(5, 6)), true);
       expect(positions.contains(Position(6, 6)), true);
@@ -148,8 +135,7 @@ void main() {
     test('블록의 실제 위치(positions)가 올바른지 확인 - T 블록', () {
       final tetromino = Tetromino(type: TetrominoType.T, x: 3, y: 0);
       final positions = tetromino.positions;
-      
-      // T 블록 0도 회전: ㅗ 모양
+
       expect(positions.length, 4);
       expect(positions.contains(Position(4, 1)), true); // 위 중앙
       expect(positions.contains(Position(3, 2)), true); // 아래 왼쪽
@@ -159,17 +145,15 @@ void main() {
     
     test('회전 후 블록의 위치가 올바르게 변경되는지 확인', () {
       final tetromino = Tetromino(type: TetrominoType.I, x: 3, y: 0);
-      
-      // 0도 회전: 가로
+
       var positions = tetromino.positions;
       expect(positions.length, 4);
-      expect(positions.every((p) => p.y == 1), true); // 모두 같은 y 좌표
+      expect(positions.every((p) => p.y == 1), true);
       
-      // 90도 회전: 세로
       tetromino.rotateClockwise();
       positions = tetromino.positions;
       expect(positions.length, 4);
-      expect(positions.every((p) => p.x == 5), true); // 모두 같은 x 좌표
+      expect(positions.every((p) => p.x == 5), true);
     });
     
     test('모든 블록 타입이 4개의 셀을 차지하는지 확인', () {
@@ -177,7 +161,6 @@ void main() {
         final tetromino = Tetromino(type: type);
         final positions = tetromino.positions;
         
-        // 테트로미노는 항상 4개의 블록으로 구성
         expect(positions.length, 4, reason: '$type 블록은 4개의 셀을 차지해야 합니다');
       }
     });
