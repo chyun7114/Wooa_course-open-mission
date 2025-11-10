@@ -32,6 +32,18 @@ class GameProvider with ChangeNotifier {
 
   bool _canHold = true;
 
+  Tetromino? get ghostTetromino {
+    if (_currentTetromino == null || _gameState != GameState.playing) {
+      return null;
+    }
+
+    final ghost = _currentTetromino!.copy();
+    while (_engine.canMoveDown(ghost)) {
+      ghost.moveDown();
+    }
+    return ghost;
+  }
+
   GameState _gameState = GameState.idle;
   GameState get gameState => _gameState;
 

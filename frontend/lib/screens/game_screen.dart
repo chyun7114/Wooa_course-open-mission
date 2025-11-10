@@ -53,6 +53,7 @@ class GameScreen extends StatelessWidget {
             BoardWidget(
               board: gameProvider.board,
               currentTetromino: gameProvider.currentTetromino,
+              ghostTetromino: gameProvider.ghostTetromino,
             ),
             const SizedBox(width: 40),
             Column(

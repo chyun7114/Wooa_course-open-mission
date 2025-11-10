@@ -6,11 +6,13 @@ import 'cell_widget.dart';
 class BoardWidget extends StatelessWidget {
   final Board board;
   final Tetromino? currentTetromino;
+  final Tetromino? ghostTetromino;
 
   const BoardWidget({
     super.key,
     required this.board,
     this.currentTetromino,
+    this.ghostTetromino,
   });
 
   List<List<int>> _getMergedGrid() {
@@ -19,6 +21,16 @@ class BoardWidget extends StatelessWidget {
       (y) => List<int>.from(board.grid[y]),
     );
 
+    // 고스트 블록 먼저 그리기 (투명하게)
+    if (ghostTetromino != null) {
+      for (final pos in ghostTetromino!.positions) {
+        if (board.isInside(pos.x, pos.y) && merged[pos.y][pos.x] == 0) {
+          merged[pos.y][pos.x] = -ghostTetromino!.colorCode; // 음수로 고스트 표시
+        }
+      }
+    }
+
+    // 현재 블록 그리기
     if (currentTetromino != null) {
       for (final pos in currentTetromino!.positions) {
         if (board.isInside(pos.x, pos.y)) {
