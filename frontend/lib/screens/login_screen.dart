@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'signup_screen.dart';
-import 'game_screen.dart';
+import 'game_mode_screen.dart';
 import '../widgets/auth/auth_header.dart';
 import '../widgets/auth/custom_text_field.dart';
 import '../widgets/auth/password_text_field.dart';
@@ -30,7 +30,7 @@ class _LoginScreenState extends State<LoginScreen> {
       // TODO: 실제 로그인 로직 구현
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const GameScreen()),
+        MaterialPageRoute(builder: (context) => const GameModeScreen()),
       );
     }
   }
