@@ -47,3 +47,9 @@ Flutter + NestJS를 활용하여 멀티플레이를 지원하는 웹/앱 테트�
 - [] CORS 설정
 - [] Rate Limiting (API 요청 제한)
 - [] 배포 (Docker, AWS/Vercel 등)
+
+### 컨벤션
+커밋 컨벤션
+```PlainText
+{type}({scope}): {description}
+```
