@@ -16,27 +16,29 @@ class CellWidget extends StatelessWidget {
     final isGhost = value < 0;
     final colorCode = isGhost ? -value : value;
     final color = GameConstants.blockColors[colorCode] ?? Colors.transparent;
-    
+
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: isGhost ? color.withOpacity(0.3) : color,
+        color: isGhost ? color.withValues(alpha: 0.3) : color,
         border: Border.all(
-          color: value == 0 
-            ? Colors.grey[800]! 
-            : isGhost 
-              ? color.withOpacity(0.5)
+          color: value == 0
+              ? Colors.grey[800]!
+              : isGhost
+              ? color.withValues(alpha: 0.5)
               : Colors.black,
           width: GameConstants.borderWidth,
         ),
-        boxShadow: value != 0 && !isGhost ? [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 2,
-            offset: const Offset(1, 1),
-          ),
-        ] : null,
+        boxShadow: value != 0 && !isGhost
+            ? [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.5),
+                  blurRadius: 2,
+                  offset: const Offset(1, 1),
+                ),
+              ]
+            : null,
       ),
     );
   }
