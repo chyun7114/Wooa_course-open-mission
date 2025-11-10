@@ -1,7 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-class GameControlsWidget extends StatelessWidget {
+class GameControlsWidget extends StatefulWidget {
   final VoidCallback onMoveLeft;
   final VoidCallback onMoveRight;
   final VoidCallback onMoveDown;
@@ -24,6 +25,31 @@ class GameControlsWidget extends StatelessWidget {
   });
 
   @override
+  State<GameControlsWidget> createState() => _GameControlsWidgetState();
+}
+
+class _GameControlsWidgetState extends State<GameControlsWidget> {
+  final Map<LogicalKeyboardKey, Timer?> _keyTimers = {};
+  final Set<LogicalKeyboardKey> _pressedKeys = {};
+
+  static const Duration _initialDelay = Duration(milliseconds: 200);
+  static const Duration _repeatInterval = Duration(milliseconds: 50);
+
+  @override
+  void dispose() {
+    _cancelAllTimers();
+    super.dispose();
+  }
+
+  void _cancelAllTimers() {
+    for (var timer in _keyTimers.values) {
+      timer?.cancel();
+    }
+    _keyTimers.clear();
+    _pressedKeys.clear();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return KeyboardListener(
       focusNode: FocusNode()..requestFocus(),
@@ -34,36 +60,76 @@ class GameControlsWidget extends StatelessWidget {
   }
 
   void _handleKeyEvent(KeyEvent event) {
-    if (event is! KeyDownEvent) return;
+    if (event is KeyDownEvent) {
+      _handleKeyDown(event);
+    } else if (event is KeyUpEvent) {
+      _handleKeyUp(event);
+    }
+  }
 
-    switch (event.logicalKey) {
+  void _handleKeyDown(KeyDownEvent event) {
+    final key = event.logicalKey;
+
+    if (_pressedKeys.contains(key)) return;
+    _pressedKeys.add(key);
+
+    _executeKeyAction(key);
+
+    if (_isRepeatableKey(key)) {
+      _keyTimers[key] = Timer(_initialDelay, () {
+        _keyTimers[key] = Timer.periodic(_repeatInterval, (timer) {
+          if (_pressedKeys.contains(key)) {
+            _executeKeyAction(key);
+          } else {
+            timer.cancel();
+          }
+        });
+      });
+    }
+  }
+
+  void _handleKeyUp(KeyUpEvent event) {
+    final key = event.logicalKey;
+    _pressedKeys.remove(key);
+    _keyTimers[key]?.cancel();
+    _keyTimers.remove(key);
+  }
+
+  bool _isRepeatableKey(LogicalKeyboardKey key) {
+    return key == LogicalKeyboardKey.arrowLeft ||
+        key == LogicalKeyboardKey.arrowRight ||
+        key == LogicalKeyboardKey.arrowDown;
+  }
+
+  void _executeKeyAction(LogicalKeyboardKey key) {
+    switch (key) {
       case LogicalKeyboardKey.enter:
-        onStart?.call();
+        widget.onStart?.call();
         break;
       case LogicalKeyboardKey.arrowLeft:
-        onMoveLeft();
+        widget.onMoveLeft();
         break;
       case LogicalKeyboardKey.arrowRight:
-        onMoveRight();
+        widget.onMoveRight();
         break;
       case LogicalKeyboardKey.arrowDown:
-        onMoveDown();
+        widget.onMoveDown();
         break;
       case LogicalKeyboardKey.arrowUp:
       case LogicalKeyboardKey.keyX:
-        onRotate();
+        widget.onRotate();
         break;
       case LogicalKeyboardKey.space:
-        onHardDrop();
+        widget.onHardDrop();
         break;
       case LogicalKeyboardKey.keyP:
       case LogicalKeyboardKey.escape:
-        onPause();
+        widget.onPause();
         break;
       case LogicalKeyboardKey.keyC:
       case LogicalKeyboardKey.shiftLeft:
       case LogicalKeyboardKey.shiftRight:
-        onHold?.call();
+        widget.onHold?.call();
         break;
     }
   }
