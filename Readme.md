@@ -55,7 +55,29 @@ Flutter + NestJS를 활용하여 멀티플레이를 지원하는 웹/앱 테트�
 - [ ] 배포 (Docker, AWS/Vercel 등)
 
 ### 컨벤션
-커밋 컨벤션
+**커밋 컨벤션**
 ```PlainText
 {type}({scope}): {description}
 ```
+
+**브랜치 네이밍 컨벤션 (백엔드 작업 시작 후 설정)**
+```
+main (프로덕션)
+├── develop (개발 통합)
+│   ├── feature/frontend/{feature-name}
+│   ├── feature/backend/{feature-name}
+│   ├── feature/shared/{feature-name}
+│   └── hotfix/{issue-name}
+└── release/{version}
+```
+
+```PlainText
+main
+├── develop
+│   ├── feature/backend/user-system
+│   ├── feature/backend/ranking-system
+│   ├── feature/backend/multiplayer
+│   ├── feature/frontend/multiplayer-ui
+│   └── feature/shared/api-contracts
+```
+
