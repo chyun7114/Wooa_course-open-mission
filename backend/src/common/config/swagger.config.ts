@@ -4,8 +4,8 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 export class SwaggerConfig {
     static setUp(app: INestApplication) {
         const config = new DocumentBuilder()
-            .setTitle('Moo-Server Version 1 API Document')
-            .setDescription('서비스 이름은 뭘까요')
+            .setTitle('Tetris-Server API Document')
+            .setDescription('테트리스 서버 API 문서입니다.')
             .setVersion('1.0.0')
             .addBearerAuth()
             .build();

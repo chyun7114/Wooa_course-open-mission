@@ -6,15 +6,15 @@ import { RedisModule } from './common/redis/redis.module';
 import { DrizzleModule } from './common/db/drizzle.module';
 
 @Module({
-  imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      envFilePath: '.env',
-    }),
-    DrizzleModule,
-    RedisModule,
-  ],
-  controllers: [AppController],
-  providers: [AppService],
+    imports: [
+        ConfigModule.forRoot({
+            isGlobal: true,
+            envFilePath: '.env',
+        }),
+        DrizzleModule,
+        RedisModule,
+    ],
+    controllers: [AppController],
+    providers: [AppService],
 })
 export class AppModule {}
