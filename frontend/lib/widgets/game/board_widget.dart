@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../core/models/board.dart';
-import '../core/models/tetromino.dart';
+import '../../core/models/board.dart';
+import '../../core/models/tetromino.dart';
 import 'cell_widget.dart';
 
 class BoardWidget extends StatelessWidget {
