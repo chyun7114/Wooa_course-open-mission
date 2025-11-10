@@ -110,12 +110,17 @@ class GameScreen extends StatelessWidget {
       title: 'PAUSED',
       message: 'Press P to Resume',
       onTap: gameProvider.resumeGame,
+      showResumeButton: true,
       showRestartButton: true,
+      onResume: gameProvider.resumeGame,
       onRestart: gameProvider.restartGame,
     );
   }
 
-  Widget _buildGameOverOverlay(BuildContext context, GameProvider gameProvider) {
+  Widget _buildGameOverOverlay(
+    BuildContext context,
+    GameProvider gameProvider,
+  ) {
     return _buildOverlay(
       context,
       title: 'GAME OVER',
@@ -131,7 +136,9 @@ class GameScreen extends StatelessWidget {
     required String title,
     required String message,
     required VoidCallback onTap,
+    bool showResumeButton = false,
     bool showRestartButton = false,
+    VoidCallback? onResume,
     VoidCallback? onRestart,
   }) {
     return Container(
@@ -151,27 +158,46 @@ class GameScreen extends StatelessWidget {
             const SizedBox(height: 20),
             Text(
               message,
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 20,
-              ),
+              style: const TextStyle(color: Colors.white, fontSize: 20),
             ),
             const SizedBox(height: 40),
-            if (showRestartButton)
-              ElevatedButton(
-                onPressed: onRestart,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 40,
-                    vertical: 20,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (showResumeButton)
+                  ElevatedButton(
+                    onPressed: onResume,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 40,
+                        vertical: 20,
+                      ),
+                    ),
+                    child: const Text(
+                      'RESUME GAME',
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
                   ),
-                ),
-                child: const Text(
-                  'RESTART',
-                  style: TextStyle(fontSize: 18),
-                ),
-              ),
+                if (showResumeButton && showRestartButton)
+                  const SizedBox(width: 20),
+                if (showRestartButton)
+                  ElevatedButton(
+                    onPressed: onRestart,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 40,
+                        vertical: 20,
+                      ),
+                    ),
+                    child: const Text(
+                      'RESTART GAME',
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                  ),
+              ],
+            ),
           ],
         ),
       ),
