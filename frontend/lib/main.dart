@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/game_provider.dart';
-import 'screens/game_screen.dart';
+import 'screens/login_screen.dart';
 
 void main() {
   runApp(const TetrisApp());
@@ -22,7 +22,7 @@ class TetrisApp extends StatelessWidget {
           primarySwatch: Colors.blue,
           scaffoldBackgroundColor: Colors.black,
         ),
-        home: const GameScreen(),
+        home: const LoginScreen(),
       ),
     );
   }

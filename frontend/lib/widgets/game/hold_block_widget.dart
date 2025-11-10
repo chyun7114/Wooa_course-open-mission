@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import '../core/models/tetromino.dart';
+import '../../core/models/tetromino.dart';
 import 'cell_widget.dart';
 
-class NextBlockWidget extends StatelessWidget {
-  final Tetromino? nextTetromino;
+class HoldBlockWidget extends StatelessWidget {
+  final Tetromino? holdTetromino;
 
-  const NextBlockWidget({
+  const HoldBlockWidget({
     super.key,
-    this.nextTetromino,
+    this.holdTetromino,
   });
 
   @override
@@ -23,7 +23,7 @@ class NextBlockWidget extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           const Text(
-            'NEXT',
+            'HOLD',
             style: TextStyle(
               color: Colors.white,
               fontSize: 16,
@@ -38,11 +38,11 @@ class NextBlockWidget extends StatelessWidget {
   }
 
   Widget _buildPreview() {
-    if (nextTetromino == null) {
+    if (holdTetromino == null) {
       return const SizedBox(width: 120, height: 120);
     }
 
-    final shape = nextTetromino!.shape;
+    final shape = holdTetromino!.shape;
     
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -53,7 +53,7 @@ class NextBlockWidget extends StatelessWidget {
           children: List.generate(
             4,
             (col) => CellWidget(
-              value: shape[row][col] == 1 ? nextTetromino!.colorCode : 0,
+              value: shape[row][col] == 1 ? holdTetromino!.colorCode : 0,
               size: 25,
             ),
           ),
