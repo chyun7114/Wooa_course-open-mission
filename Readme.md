@@ -1,6 +1,9 @@
 ### 어려운/낯선 문제 해커톤
 Flutter + NestJS를 활용하여 멀티플레이를 지원하는 웹/앱 테트리스를 만드는 것을 목표로 한다.
 
+## 🎮 플레이하기
+**GitHub Pages 배포**: https://chyun7114.github.io/Wooa_course-open-mission/
+
 ### 기능 구현 목록
 **Front-end(Flutter)**
 - [x] 보드 모델 구현

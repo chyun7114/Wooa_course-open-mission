@@ -1,0 +1,42 @@
+name: Deploy Flutter Web to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        channel: 'stable'
+    
+    - name: Install dependencies
+      run: |
+        cd frontend
+        flutter pub get
+    
+    - name: Build web
+      run: |
+        cd frontend
+        flutter build web --base-href /Wooa_course-open-mission/
+    
+    - name: Copy build to docs
+      run: |
+        rm -rf docs
+        cp -r frontend/build/web docs
+        touch docs/.nojekyll
+    
+    - name: Commit and push
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        git add docs
+        git commit -m "Deploy to GitHub Pages" || echo "No changes to commit"
+        git push
