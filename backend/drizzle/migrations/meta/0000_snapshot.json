@@ -1,29 +1,17 @@
 {
-  "id": "447fc132-0d11-49f1-bfa7-3f78058de306",
+  "id": "df3c935c-77ef-41a4-93c2-39441fa83ec6",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-    "public.users": {
-      "name": "users",
+    "public.member": {
+      "name": "member",
       "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "serial",
           "primaryKey": true,
-          "notNull": true
-        },
-        "email": {
-          "name": "email",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
           "notNull": true
         },
         "created_at": {
@@ -39,17 +27,42 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "deleted": {
+          "name": "deleted",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "password": {
+          "name": "password",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
         }
       },
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "users_email_unique": {
-          "name": "users_email_unique",
+        "member_user_id_unique": {
+          "name": "member_user_id_unique",
           "nullsNotDistinct": false,
           "columns": [
-            "email"
+            "user_id"
           ]
         }
       },
