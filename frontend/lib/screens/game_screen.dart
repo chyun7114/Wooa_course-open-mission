@@ -5,6 +5,7 @@ import '../widgets/board_widget.dart';
 import '../widgets/next_block_widget.dart';
 import '../widgets/hold_block_widget.dart';
 import '../widgets/game_info_widget.dart';
+import '../widgets/controls_guide_widget.dart';
 import '../widgets/game_controls_widget.dart';
 
 class GameScreen extends StatelessWidget {
@@ -44,6 +45,8 @@ class GameScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 HoldBlockWidget(holdTetromino: gameProvider.holdTetromino),
+                const SizedBox(height: 20),
+                const ControlsGuideWidget(),
               ],
             ),
             const SizedBox(width: 40),
