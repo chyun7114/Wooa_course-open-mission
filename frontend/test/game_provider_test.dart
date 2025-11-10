@@ -294,5 +294,71 @@ void main() {
       // 게임 오버 상태에서는 하드 드롭이 동작하지 않으므로 점수 변화 없음
       expect(provider.score, scoreBeforeHardDrop);
     });
+
+    test('홀드 기능이 올바르게 동작하는지 확인', () {
+      provider.startGame();
+      
+      expect(provider.holdTetromino, null);
+      
+      final currentType = provider.currentTetromino!.type;
+      
+      // 첫 번째 홀드
+      provider.hold();
+      
+      expect(provider.holdTetromino, isNotNull);
+      expect(provider.holdTetromino!.type, currentType);
+    });
+
+    test('홀드 후 바로 다시 홀드할 수 없는지 확인', () {
+      provider.startGame();
+      
+      provider.hold();
+      
+      final secondCurrent = provider.currentTetromino!.type;
+      
+      // 바로 다시 홀드 시도
+      provider.hold();
+      
+      // 홀드가 안 되어야 하므로 현재 블록 타입이 변경되지 않음
+      expect(provider.currentTetromino!.type, secondCurrent);
+    });
+
+    test('블록 고정 후 다시 홀드할 수 있는지 확인', () {
+      provider.startGame();
+      
+      provider.hold();
+      
+      // 블록을 고정
+      provider.hardDrop();
+      
+      // 이제 다시 홀드 가능
+      final currentType = provider.currentTetromino!.type;
+      provider.hold();
+      
+      expect(provider.holdTetromino!.type, currentType);
+    });
+
+    test('홀드된 블록과 현재 블록을 교환할 수 있는지 확인', () {
+      provider.startGame();
+      
+      final firstType = provider.currentTetromino!.type;
+      
+      // 첫 번째 홀드
+      provider.hold();
+      
+      expect(provider.holdTetromino!.type, firstType);
+      
+      // 블록 고정
+      provider.hardDrop();
+      
+      final thirdType = provider.currentTetromino!.type;
+      
+      // 두 번째 홀드 (교환)
+      provider.hold();
+      
+      // 현재 블록이 첫 번째 홀드한 블록이어야 함
+      expect(provider.currentTetromino!.type, firstType);
+      expect(provider.holdTetromino!.type, thirdType);
+    });
   });
 }

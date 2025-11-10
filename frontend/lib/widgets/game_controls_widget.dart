@@ -9,6 +9,7 @@ class GameControlsWidget extends StatelessWidget {
   final VoidCallback onHardDrop;
   final VoidCallback onPause;
   final VoidCallback? onStart;
+  final VoidCallback? onHold;
 
   const GameControlsWidget({
     super.key,
@@ -19,6 +20,7 @@ class GameControlsWidget extends StatelessWidget {
     required this.onHardDrop,
     required this.onPause,
     this.onStart,
+    this.onHold,
   });
 
   @override
@@ -57,6 +59,11 @@ class GameControlsWidget extends StatelessWidget {
       case LogicalKeyboardKey.keyP:
       case LogicalKeyboardKey.escape:
         onPause();
+        break;
+      case LogicalKeyboardKey.keyC:
+      case LogicalKeyboardKey.shiftLeft:
+      case LogicalKeyboardKey.shiftRight:
+        onHold?.call();
         break;
     }
   }

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/game_provider.dart';
 import '../widgets/board_widget.dart';
 import '../widgets/next_block_widget.dart';
+import '../widgets/hold_block_widget.dart';
 import '../widgets/game_info_widget.dart';
 import '../widgets/game_controls_widget.dart';
 
@@ -39,6 +40,13 @@ class GameScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                HoldBlockWidget(holdTetromino: gameProvider.holdTetromino),
+              ],
+            ),
+            const SizedBox(width: 40),
             BoardWidget(
               board: gameProvider.board,
               currentTetromino: gameProvider.currentTetromino,
@@ -62,6 +70,7 @@ class GameScreen extends StatelessWidget {
               onMoveDown: gameProvider.moveDown,
               onRotate: gameProvider.rotate,
               onHardDrop: gameProvider.hardDrop,
+              onHold: gameProvider.hold,
               onStart: () {
                 if (gameProvider.gameState == GameState.idle) {
                   gameProvider.startGame();

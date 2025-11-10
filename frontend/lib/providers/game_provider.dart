@@ -27,6 +27,11 @@ class GameProvider with ChangeNotifier {
   Tetromino? _nextTetromino;
   Tetromino? get nextTetromino => _nextTetromino;
 
+  Tetromino? _holdTetromino;
+  Tetromino? get holdTetromino => _holdTetromino;
+
+  bool _canHold = true;
+
   GameState _gameState = GameState.idle;
   GameState get gameState => _gameState;
 
@@ -51,6 +56,8 @@ class GameProvider with ChangeNotifier {
     _generator.initialize();
     _currentTetromino = _generator.getNext();
     _nextTetromino = _generator.peekNext();
+    _holdTetromino = null;
+    _canHold = true;
     
     _gameState = GameState.playing;
     _startFallTimer();
@@ -106,6 +113,7 @@ class GameProvider with ChangeNotifier {
 
     _engine.lockTetromino(_currentTetromino!);
     _clearLinesAndUpdateScore();
+    _canHold = true;
     _spawnNextTetromino();
   }
 
@@ -234,6 +242,30 @@ class GameProvider with ChangeNotifier {
       _currentTetromino!.y -= 1;
       notifyListeners();
     }
+  }
+
+  void hold() {
+    if (_gameState != GameState.playing || _currentTetromino == null || !_canHold) {
+      return;
+    }
+
+    if (_holdTetromino == null) {
+      _holdTetromino = Tetromino(type: _currentTetromino!.type);
+      _currentTetromino = _generator.getNext();
+      _nextTetromino = _generator.peekNext();
+    } else {
+      final temp = Tetromino(type: _holdTetromino!.type);
+      _holdTetromino = Tetromino(type: _currentTetromino!.type);
+      _currentTetromino = temp;
+    }
+
+    if (!_engine.isValidPosition(_currentTetromino!)) {
+      _gameOver();
+      return;
+    }
+
+    _canHold = false;
+    notifyListeners();
   }
 
   @override
