@@ -11,11 +11,10 @@ export class DrizzleService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    // 데이터베이스 연결 확인
     try {
-      console.log('✅ Drizzle ORM connected successfully');
+      console.log('✅ Drizzle ORM 연결 성공');
     } catch (error) {
-      console.error('❌ Drizzle ORM connection failed:', error);
+      console.error('❌ Drizzle ORM 연결 실패:', error);
       throw error;
     }
   }
