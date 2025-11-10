@@ -1,5 +1,5 @@
 {
-  "id": "df3c935c-77ef-41a4-93c2-39441fa83ec6",
+  "id": "348e8f2d-e456-4df9-89c2-2031424119a7",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -35,8 +35,14 @@
           "notNull": false,
           "default": false
         },
-        "user_id": {
-          "name": "user_id",
+        "username": {
+          "name": "username",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -46,23 +52,24 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
-        },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
         }
       },
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "member_user_id_unique": {
-          "name": "member_user_id_unique",
+        "member_username_unique": {
+          "name": "member_username_unique",
           "nullsNotDistinct": false,
           "columns": [
-            "user_id"
+            "username"
+          ]
+        },
+        "member_email_unique": {
+          "name": "member_email_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "email"
           ]
         }
       },
