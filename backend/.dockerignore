@@ -1,0 +1,44 @@
+# 의존성
+node_modules
+npm-debug.log
+
+# 테스트 및 개발 파일
+test
+coverage
+*.spec.ts
+*.test.ts
+
+# 빌드 결과물 (재빌드할 것이므로)
+dist
+
+# Git
+.git
+.gitignore
+
+# 환경 변수 (보안상 제외, 런타임에 주입)
+.env
+.env.local
+.env.*.local
+
+# IDE 설정
+.vscode
+.idea
+*.iml
+
+# 문서
+README.md
+*.md
+
+# 로그
+logs
+*.log
+
+# OS 파일
+.DS_Store
+Thumbs.db
+
+# 기타
+.prettierrc
+.eslintrc.js
+eslint.config.mjs
+# tsconfig.json과 nest-cli.json은 빌드에 필요하므로 제외하지 않음
