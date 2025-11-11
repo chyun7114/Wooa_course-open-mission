@@ -93,12 +93,9 @@ describe('MemberController', () => {
             };
 
             const expectedResult = {
-                id: 1,
                 username: 'testuser',
                 email: 'test@example.com',
-                createdAt: new Date(),
-                updatedAt: new Date(),
-                deleted: false,
+                accessToken: 'mock.jwt.token',
             };
 
             mockMemberService.loginMember.mockResolvedValue(expectedResult);

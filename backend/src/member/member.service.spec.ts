@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { MemberService } from './member.service';
 import { MemberRepository } from './member.repository';
 import { NotFoundException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 
 // bcrypt 모킹
@@ -16,6 +17,10 @@ describe('MemberService', () => {
         findById: jest.fn(),
     };
 
+    const mockJwtService = {
+        sign: jest.fn(),
+    };
+
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
             providers: [
@@ -23,6 +28,10 @@ describe('MemberService', () => {
                 {
                     provide: MemberRepository,
                     useValue: mockMemberRepository,
+                },
+                {
+                    provide: JwtService,
+                    useValue: mockJwtService,
                 },
             ],
         }).compile();
@@ -100,8 +109,11 @@ describe('MemberService', () => {
                 deleted: false,
             };
 
+            const mockToken = 'mock.jwt.token';
+
             mockMemberRepository.findByEmail.mockResolvedValue(member);
             (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+            mockJwtService.sign.mockReturnValue(mockToken);
 
             // When
             const result = await service.loginMember(signInDto);
@@ -114,13 +126,15 @@ describe('MemberService', () => {
                 'password123',
                 'hashedPassword123',
             );
+            expect(mockJwtService.sign).toHaveBeenCalledWith({
+                sub: 1,
+                email: 'test@example.com',
+                username: 'testuser',
+            });
             expect(result).toEqual({
-                id: 1,
                 username: 'testuser',
                 email: 'test@example.com',
-                createdAt: member.createdAt,
-                updatedAt: member.updatedAt,
-                deleted: false,
+                accessToken: mockToken,
             });
             expect(result).not.toHaveProperty('password');
         });
