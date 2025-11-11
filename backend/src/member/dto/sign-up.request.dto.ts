@@ -2,12 +2,12 @@ import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class SignUpRequestDto {
-    @ApiProperty({ description: '사용자명', example: 'john_doe' })
+    @ApiProperty({ description: '사용자명', example: 'lumi' })
     @IsString()
     @IsNotEmpty()
     username: string;
 
-    @ApiProperty({ description: '이메일', example: 'user@example.com' })
+    @ApiProperty({ description: '이메일', example: 'lumi@flutter.com' })
     @IsEmail()
     @IsNotEmpty()
     email: string;
