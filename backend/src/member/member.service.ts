@@ -3,10 +3,15 @@ import { MemberRepository } from './member.repository';
 import * as bcrypt from 'bcrypt';
 import { SignUpRequestDto } from './dto/sign-up.request.dto';
 import { SignInRequestDto } from './dto/sign-in.request.dto';
+import { JwtService } from '@nestjs/jwt';
+import { SignInResponseDto } from './dto/sign-in.response.dto';
 
 @Injectable()
 export class MemberService {
-    constructor(private readonly memberRepository: MemberRepository) {}
+    constructor(
+        private readonly memberRepository: MemberRepository,
+        private readonly jwtService: JwtService,
+    ) {}
 
     async createMember(data: SignUpRequestDto) {
         const hashedPassword = await bcrypt.hash(data.password, 10);
@@ -17,13 +22,12 @@ export class MemberService {
             password: hashedPassword,
         });
 
-        // 비밀번호 제외하고 반환
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { password: _, ...memberWithoutPassword } = member;
         return memberWithoutPassword;
     }
 
-    async loginMember(data: SignInRequestDto) {
+    async loginMember(data: SignInRequestDto): Promise<SignInResponseDto> {
         const member = await this.memberRepository.findByEmail(data.email);
 
         if (!member) {
@@ -39,10 +43,18 @@ export class MemberService {
             throw new NotFoundException('올바른 비밀번호를 입력해 주세요');
         }
 
-        // 비밀번호 제외하고 반환
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { password: _, ...memberWithoutPassword } = member;
-        return memberWithoutPassword;
+        const payload = {
+            sub: member.id,
+            email: member.email,
+            username: member.username,
+        };
+        const accessToken = this.jwtService.sign(payload);
+
+        return {
+            username: member.username,
+            email: member.email,
+            accessToken,
+        };
     }
 
     private async validatePassword(
