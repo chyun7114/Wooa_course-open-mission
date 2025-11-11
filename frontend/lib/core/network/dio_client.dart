@@ -10,13 +10,10 @@ class DioClient {
     return _instance;
   }
 
-  // 환경에 따른 기본 URL 반환
   static String get _baseUrl {
-    // GitHub Pages 배포 환경에서는 실제 백엔드 URL 사용
     if (kReleaseMode) {
-      return 'https://your-backend-url.com';
+      return 'https://distinctive-magdalene-chyun7114-f3225d28.koyeb.app';
     }
-    // 개발 환경에서는 .env 파일 또는 기본값 사용
     return dotenv.env['BASE_URL'] ?? 'http://localhost:3000';
   }
 
@@ -30,7 +27,6 @@ class DioClient {
       ),
     );
 
-    // 인터셉터 추가 (로깅, 토큰 자동 추가 등)
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
