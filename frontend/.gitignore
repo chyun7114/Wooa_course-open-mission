@@ -156,6 +156,8 @@ app.*.symbols
 !/dev/ci/**/Gemfile.lock
 !.vscode/settings.json
 
+.env
+
 # Monorepo
 .cipd
 .gclient
