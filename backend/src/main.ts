@@ -21,9 +21,9 @@ async function bootstrap() {
         }),
     );
 
-    // CORS 설정 (필요한 경우)
     app.enableCors({
         origin: true,
+        methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
         credentials: true,
     });
 
