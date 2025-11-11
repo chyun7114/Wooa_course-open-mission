@@ -1,6 +1,3 @@
-/// GameProvider의 단위 테스트
-/// 게임 로직과 상태 관리가 올바르게 동작하는지 검증합니다.
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/providers/game_provider.dart';
 import 'package:frontend/core/models/tetromino.dart';

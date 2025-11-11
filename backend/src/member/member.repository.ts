@@ -16,15 +16,15 @@ export class MemberRepository {
 
     async createMember(data: {
         username: string;
+        email: string;
         password: string;
-        name: string;
     }) {
         const [member] = await this.db
             .insert(Member)
             .values({
                 username: data.username,
+                email: data.email,
                 password: data.password,
-                name: data.name,
             })
             .returning();
 
