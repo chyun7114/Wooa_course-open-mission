@@ -28,7 +28,7 @@ jobs:
       - name: Build web
         run: |
           cd frontend
-          flutter build web --web-renderer html --base-href /Wooa_course-open-mission/
+          flutter build web --release --base-href /Wooa_course-open-mission/
 
       - name: Copy build to docs
         run: |
