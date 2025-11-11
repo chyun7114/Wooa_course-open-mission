@@ -4,6 +4,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { RedisModule } from './common/redis/redis.module';
 import { DrizzleModule } from './common/db/drizzle.module';
+import { MemberModule } from './member/member.module';
 
 @Module({
     imports: [
@@ -13,6 +14,7 @@ import { DrizzleModule } from './common/db/drizzle.module';
         }),
         DrizzleModule,
         RedisModule,
+        MemberModule,
     ],
     controllers: [AppController],
     providers: [AppService],

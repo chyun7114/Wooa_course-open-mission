@@ -5,6 +5,7 @@ import postgres from 'postgres';
 
 export const DRIZZLE_ORM = Symbol('DRIZZLE_ORM');
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const drizzleProvider = {
     provide: DRIZZLE_ORM,
     inject: [ConfigService],
