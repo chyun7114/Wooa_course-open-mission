@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'game_screen.dart';
+import 'room_list_screen.dart';
 import '../widgets/game_mode/mode_selection_card.dart';
 
 class GameModeScreen extends StatelessWidget {
@@ -72,9 +73,13 @@ class GameModeScreen extends StatelessWidget {
                     description: 'Compete with other\nplayers online',
                     icon: Icons.people,
                     color: Colors.purple,
-                    isComingSoon: true,
                     onTap: () {
-                      // TODO: 멀티플레이어 화면으로 이동
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const RoomListScreen(),
+                        ),
+                      );
                     },
                   ),
                 ],
