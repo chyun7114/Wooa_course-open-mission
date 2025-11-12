@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'providers/game_provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/room_provider.dart';
+import 'providers/room_waiting_provider.dart';
 import 'screens/login_screen.dart';
 
 void main() {
@@ -19,6 +20,7 @@ class TetrisApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => GameProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => RoomProvider()),
+        ChangeNotifierProvider(create: (_) => RoomWaitingProvider()),
       ],
       child: MaterialApp(
         title: 'Tetris',

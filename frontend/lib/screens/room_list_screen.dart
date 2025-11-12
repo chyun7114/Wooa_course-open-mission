@@ -6,6 +6,7 @@ import '../widgets/room/room_card.dart';
 import '../widgets/room/room_search_bar.dart';
 import '../widgets/room/empty_room_view.dart';
 import '../widgets/room/create_room_dialog.dart';
+import 'room_waiting_screen.dart';
 
 class RoomListScreen extends StatefulWidget {
   const RoomListScreen({super.key});
@@ -165,8 +166,16 @@ class _RoomListScreenState extends State<RoomListScreen> {
 
     if (mounted) {
       if (success) {
-        _showSnackBar('방에 참여했습니다');
-        // TODO: 게임 대기 화면으로 이동
+        // 방 대기실 화면으로 이동
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => RoomWaitingScreen(
+              room: room,
+              userId: 'current_user_id', // TODO: 실제 사용자 ID로 변경
+            ),
+          ),
+        );
       } else {
         _showSnackBar('방 참여에 실패했습니다', isError: true);
       }
