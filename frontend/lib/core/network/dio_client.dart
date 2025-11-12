@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/foundation.dart';
 
 class DioClient {
@@ -14,7 +13,8 @@ class DioClient {
     if (kReleaseMode) {
       return 'https://distinctive-magdalene-chyun7114-f3225d28.koyeb.app';
     }
-    return dotenv.env['BASE_URL'] ?? 'http://localhost:3000';
+    // 개발 환경에서는 localhost 사용
+    return 'http://localhost:3000';
   }
 
   DioClient._internal() {
