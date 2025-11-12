@@ -71,12 +71,12 @@ class _RoomWaitingScreenState extends State<RoomWaitingScreen> {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // 왼쪽: 플레이어 목록
-                      Expanded(flex: 2, child: _buildPlayerSection(provider)),
+                      // 좌측: 플레이어 목록 (70%)
+                      Expanded(flex: 7, child: _buildPlayerSection(provider)),
 
                       const SizedBox(width: 16),
 
-                      // 오른쪽: 채팅 패널
+                      // 우측: 채팅 패널 (30%)
                       Expanded(flex: 3, child: _buildChatSection(provider)),
                     ],
                   ),
@@ -118,20 +118,54 @@ class _RoomWaitingScreenState extends State<RoomWaitingScreen> {
 
         const SizedBox(height: 16),
 
-        // 플레이어 카드들
+        // 플레이어 카드들 (2x4 고정 그리드)
         Expanded(
-          child: ListView.builder(
-            itemCount: provider.members.length,
-            itemBuilder: (context, index) {
-              final member = provider.members[index];
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: PlayerCard(
-                  member: member,
-                  isCurrentUser: member.id == provider.currentUserId,
+          child: Column(
+            children: [
+              // 첫 번째 행
+              Expanded(
+                child: Row(
+                  children: [
+                    Expanded(child: _buildPlayerSlot(provider, 0)),
+                    const SizedBox(width: 12),
+                    Expanded(child: _buildPlayerSlot(provider, 1)),
+                  ],
                 ),
-              );
-            },
+              ),
+              const SizedBox(height: 12),
+              // 두 번째 행
+              Expanded(
+                child: Row(
+                  children: [
+                    Expanded(child: _buildPlayerSlot(provider, 2)),
+                    const SizedBox(width: 12),
+                    Expanded(child: _buildPlayerSlot(provider, 3)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              // 세 번째 행
+              Expanded(
+                child: Row(
+                  children: [
+                    Expanded(child: _buildPlayerSlot(provider, 4)),
+                    const SizedBox(width: 12),
+                    Expanded(child: _buildPlayerSlot(provider, 5)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              // 네 번째 행
+              Expanded(
+                child: Row(
+                  children: [
+                    Expanded(child: _buildPlayerSlot(provider, 6)),
+                    const SizedBox(width: 12),
+                    Expanded(child: _buildPlayerSlot(provider, 7)),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
 
@@ -258,6 +292,32 @@ class _RoomWaitingScreenState extends State<RoomWaitingScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildPlayerSlot(RoomWaitingProvider provider, int index) {
+    if (index < provider.members.length) {
+      final member = provider.members[index];
+      return PlayerCard(
+        member: member,
+        isCurrentUser: member.id == provider.currentUserId,
+      );
+    } else {
+      // 빈 슬롯
+      return Container(
+        decoration: BoxDecoration(
+          color: Colors.grey[900]!.withOpacity(0.3),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: Colors.grey[800]!,
+            width: 2,
+            style: BorderStyle.solid,
+          ),
+        ),
+        child: Center(
+          child: Icon(Icons.person_outline, size: 48, color: Colors.grey[700]),
+        ),
+      );
+    }
   }
 
   String _formatDateTime(DateTime dateTime) {
