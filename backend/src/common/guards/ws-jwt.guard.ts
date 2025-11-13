@@ -38,19 +38,16 @@ export class WsJwtGuard implements CanActivate {
     }
 
     private extractToken(client: any): string | null {
-        // 1. handshake auth에서 토큰 추출
         const authToken = client.handshake?.auth?.token;
         if (authToken) {
             return authToken;
         }
 
-        // 2. query parameter에서 토큰 추출
         const queryToken = client.handshake?.query?.token;
         if (queryToken) {
             return queryToken;
         }
 
-        // 3. Authorization 헤더에서 토큰 추출
         const authHeader = client.handshake?.headers?.authorization;
         if (authHeader && authHeader.startsWith('Bearer ')) {
             return authHeader.substring(7);
