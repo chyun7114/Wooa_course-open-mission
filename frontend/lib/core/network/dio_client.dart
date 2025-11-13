@@ -1,9 +1,11 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import '../services/auth_storage_service.dart';
 
 class DioClient {
   static final DioClient _instance = DioClient._internal();
   late final Dio dio;
+  final AuthStorageService _authStorage = AuthStorageService();
 
   factory DioClient() {
     return _instance;
@@ -28,7 +30,16 @@ class DioClient {
 
     dio.interceptors.add(
       InterceptorsWrapper(
-        onRequest: (options, handler) {
+        onRequest: (options, handler) async {
+          // 자동으로 토큰 추가 (비동기로 변경)
+          final token = await _authStorage.getAccessToken();
+          if (token != null) {
+            options.headers['Authorization'] = 'Bearer $token';
+            if (kDebugMode) {
+              debugPrint('🔑 Token added to request');
+            }
+          }
+
           if (kDebugMode) {
             debugPrint('🌐 [${options.method}] ${options.uri}');
             debugPrint('📤 Request Data: ${options.data}');
@@ -53,19 +64,28 @@ class DioClient {
             debugPrint('❌ Error: ${error.message}');
             debugPrint('📥 Error Response: ${error.response?.data}');
           }
+
+          // 401 Unauthorized - 토큰 만료
+          if (error.response?.statusCode == 401) {
+            debugPrint('🔐 Token expired or invalid');
+            // TODO: 토큰 갱신 또는 로그아웃 처리
+          }
+
           return handler.next(error);
         },
       ),
     );
   }
 
-  // 토큰 설정
+  // 수동으로 토큰 설정 (로그인 후)
   void setToken(String token) {
     dio.options.headers['Authorization'] = 'Bearer $token';
+    debugPrint('🔑 Token manually set');
   }
 
-  // 토큰 제거
+  // 토큰 제거 (로그아웃)
   void removeToken() {
     dio.options.headers.remove('Authorization');
+    debugPrint('🔓 Token removed');
   }
 }

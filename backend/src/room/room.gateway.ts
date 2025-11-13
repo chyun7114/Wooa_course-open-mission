@@ -7,14 +7,12 @@ import {
     MessageBody,
     ConnectedSocket,
 } from '@nestjs/websockets';
+import { UseGuards, Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
-import { Logger } from '@nestjs/common';
 import { RoomService } from './room.service';
-
-interface ClientData {
-    userId: string;
-    nickname: string;
-}
+import { WsJwtGuard } from '../common/guards/ws-jwt.guard';
+import { WsUser } from '../common/decorators/ws-user.decorator';
+import { AuthUser } from '../common/decorators/get-user.decorator';
 
 @WebSocketGateway({
     cors: {
@@ -22,12 +20,12 @@ interface ClientData {
     },
     namespace: '/game',
 })
+@UseGuards(WsJwtGuard)
 export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @WebSocketServer()
     server: Server;
 
     private readonly logger = new Logger(RoomGateway.name);
-    private clientData: Map<string, ClientData> = new Map();
 
     constructor(private readonly roomService: RoomService) {}
 
@@ -37,6 +35,12 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     handleDisconnect(client: Socket) {
         this.logger.log(`Client disconnected: ${client.id}`);
+
+        // JWT에서 추출한 userId 사용
+        const user = client.data?.user as AuthUser;
+        if (!user) {
+            return;
+        }
 
         // 연결이 끊긴 클라이언트가 속한 방에서 제거
         const room = this.roomService.findRoomBySocketId(client.id);
@@ -62,43 +66,24 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
                 });
             }
         }
-
-        this.clientData.delete(client.id);
-    }
-
-    @SubscribeMessage('register')
-    handleRegister(
-        @ConnectedSocket() client: Socket,
-        @MessageBody() data: { userId: string; nickname: string },
-    ) {
-        this.clientData.set(client.id, {
-            userId: data.userId,
-            nickname: data.nickname,
-        });
-        this.logger.log(`Client registered: ${data.nickname} (${client.id})`);
-
-        return { success: true };
     }
 
     @SubscribeMessage('createRoom')
     handleCreateRoom(
+        @WsUser() user: AuthUser,
         @ConnectedSocket() client: Socket,
         @MessageBody()
         data: { title: string; maxPlayers: number; password?: string },
     ) {
-        const clientInfo = this.clientData.get(client.id);
-        if (!clientInfo) {
-            return {
-                success: false,
-                message: '사용자 정보를 찾을 수 없습니다.',
-            };
-        }
+        this.logger.log(
+            `Creating room: ${data.title} by ${user.nickname} (${user.userId})`,
+        );
 
         const room = this.roomService.createRoom(
             data.title,
             data.maxPlayers,
-            clientInfo.userId,
-            clientInfo.nickname,
+            user.userId,
+            user.nickname,
             client.id,
             data.password,
         );
@@ -119,21 +104,18 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     @SubscribeMessage('joinRoom')
     handleJoinRoom(
+        @WsUser() user: AuthUser,
         @ConnectedSocket() client: Socket,
         @MessageBody() data: { roomId: string; password?: string },
     ) {
-        const clientInfo = this.clientData.get(client.id);
-        if (!clientInfo) {
-            return {
-                success: false,
-                message: '사용자 정보를 찾을 수 없습니다.',
-            };
-        }
+        this.logger.log(
+            `Joining room: ${data.roomId} by ${user.nickname} (${user.userId})`,
+        );
 
         const result = this.roomService.joinRoom(
             data.roomId,
-            clientInfo.userId,
-            clientInfo.nickname,
+            user.userId,
+            user.nickname,
             client.id,
             data.password,
         );
@@ -148,8 +130,8 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
         // 해당 방의 다른 플레이어들에게 새 플레이어 입장 알림
         client.to(data.roomId).emit('playerJoined', {
             player: {
-                id: clientInfo.userId,
-                nickname: clientInfo.nickname,
+                id: user.userId,
+                nickname: user.nickname,
                 isHost: false,
                 isReady: false,
             },
@@ -169,21 +151,15 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     @SubscribeMessage('leaveRoom')
     handleLeaveRoom(
+        @WsUser() user: AuthUser,
         @ConnectedSocket() client: Socket,
         @MessageBody() data: { roomId: string },
     ) {
-        const clientInfo = this.clientData.get(client.id);
-        if (!clientInfo) {
-            return {
-                success: false,
-                message: '사용자 정보를 찾을 수 없습니다.',
-            };
-        }
-
-        const result = this.roomService.leaveRoom(
-            data.roomId,
-            clientInfo.userId,
+        this.logger.log(
+            `Leaving room: ${data.roomId} by ${user.nickname} (${user.userId})`,
         );
+
+        const result = this.roomService.leaveRoom(data.roomId, user.userId);
 
         if (result.success) {
             client.leave(data.roomId);
@@ -193,8 +169,8 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
                 const room = this.roomService.findRoom(data.roomId);
                 if (room) {
                     this.server.to(data.roomId).emit('playerLeft', {
-                        playerId: clientInfo.userId,
-                        nickname: clientInfo.nickname,
+                        playerId: user.userId,
+                        nickname: user.nickname,
                         newHostId: result.newHostId,
                         room: room.toDetailResponse(),
                     });
@@ -214,28 +190,21 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     @SubscribeMessage('toggleReady')
     handleToggleReady(
-        @ConnectedSocket() client: Socket,
+        @WsUser() user: AuthUser,
         @MessageBody() data: { roomId: string },
     ) {
-        const clientInfo = this.clientData.get(client.id);
-        if (!clientInfo) {
-            return {
-                success: false,
-                message: '사용자 정보를 찾을 수 없습니다.',
-            };
-        }
-
-        const success = this.roomService.toggleReady(
-            data.roomId,
-            clientInfo.userId,
+        this.logger.log(
+            `Toggling ready: ${data.roomId} by ${user.nickname} (${user.userId})`,
         );
+
+        const success = this.roomService.toggleReady(data.roomId, user.userId);
 
         if (success) {
             const room = this.roomService.findRoom(data.roomId);
             if (room) {
                 // 방의 모든 플레이어에게 준비 상태 변경 알림
                 this.server.to(data.roomId).emit('readyStateChanged', {
-                    playerId: clientInfo.userId,
+                    playerId: user.userId,
                     room: room.toDetailResponse(),
                 });
             }
@@ -246,21 +215,14 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     @SubscribeMessage('startGame')
     handleStartGame(
-        @ConnectedSocket() client: Socket,
+        @WsUser() user: AuthUser,
         @MessageBody() data: { roomId: string },
     ) {
-        const clientInfo = this.clientData.get(client.id);
-        if (!clientInfo) {
-            return {
-                success: false,
-                message: '사용자 정보를 찾을 수 없습니다.',
-            };
-        }
-
-        const result = this.roomService.startGame(
-            data.roomId,
-            clientInfo.userId,
+        this.logger.log(
+            `Starting game: ${data.roomId} by ${user.nickname} (${user.userId})`,
         );
+
+        const result = this.roomService.startGame(data.roomId, user.userId);
 
         if (result.success) {
             const room = this.roomService.findRoom(data.roomId);
@@ -284,18 +246,17 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     @SubscribeMessage('sendChatMessage')
     handleChatMessage(
-        @ConnectedSocket() client: Socket,
+        @WsUser() user: AuthUser,
         @MessageBody() data: { roomId: string; message: string },
     ) {
-        const clientInfo = this.clientData.get(client.id);
-        if (!clientInfo) {
-            return { success: false };
-        }
+        this.logger.log(
+            `Chat message in ${data.roomId} from ${user.nickname}: ${data.message}`,
+        );
 
         // 방의 모든 플레이어에게 채팅 메시지 전송
         this.server.to(data.roomId).emit('chatMessage', {
-            playerId: clientInfo.userId,
-            nickname: clientInfo.nickname,
+            playerId: user.userId,
+            nickname: user.nickname,
             message: data.message,
             timestamp: new Date(),
         });

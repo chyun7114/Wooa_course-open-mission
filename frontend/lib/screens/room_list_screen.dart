@@ -24,11 +24,8 @@ class _RoomListScreenState extends State<RoomListScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final roomProvider = context.read<RoomProvider>();
 
-      // WebSocket 연결 (임시로 더미 사용자 정보 사용)
-      final userId = 'user_${DateTime.now().millisecondsSinceEpoch}';
-      final nickname = 'Player${DateTime.now().millisecondsSinceEpoch % 1000}';
-
-      roomProvider.connectWebSocket(userId, nickname);
+      // WebSocket 연결 (토큰은 AuthStorageService에서 자동으로 가져옴)
+      roomProvider.connectWebSocket();
     });
   }
 
