@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:flutter/foundation.dart';
 import '../services/auth_storage_service.dart';
@@ -10,7 +11,6 @@ class WebSocketService {
   IO.Socket? _socket;
   bool _isConnected = false;
 
-  // 개발 환경에 맞게 수정하세요
   static const String _baseUrl = kDebugMode
       ? 'http://localhost:3000'
       : 'https://distinctive-magdalene-chyun7114-f3225d28.koyeb.app';
@@ -24,7 +24,6 @@ class WebSocketService {
       return;
     }
 
-    // AuthStorageService에서 토큰 가져오기
     final token = await AuthStorageService().getAccessToken();
     final userId = await AuthStorageService().getUserId();
     final nickname = await AuthStorageService().getNickname();
@@ -46,18 +45,19 @@ class WebSocketService {
       IO.OptionBuilder()
           .setTransports(['websocket'])
           .disableAutoConnect()
-          .setAuth({
-            'token': token, // JWT 토큰을 auth에 추가
-          })
-          .setExtraHeaders({
-            'Authorization': 'Bearer $token', // Authorization 헤더에도 추가
-          })
+          .setAuth({'token': token})
+          .setExtraHeaders({'Authorization': 'Bearer $token'})
           .build(),
     );
+
+    final completer = Completer<void>();
 
     _socket?.onConnect((_) {
       debugPrint('✅ WebSocket connected with JWT authentication');
       _isConnected = true;
+      if (!completer.isCompleted) {
+        completer.complete();
+      }
     });
 
     _socket?.onDisconnect((_) {
@@ -71,9 +71,23 @@ class WebSocketService {
 
     _socket?.onConnectError((error) {
       debugPrint('🔴 WebSocket connect error: $error');
+      if (!completer.isCompleted) {
+        completer.completeError(error);
+      }
     });
 
     _socket?.connect();
+
+    try {
+      await completer.future.timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          debugPrint('⚠️ WebSocket connection timeout');
+        },
+      );
+    } catch (e) {
+      debugPrint('❌ Failed to connect WebSocket: $e');
+    }
   }
 
   void disconnect() {
@@ -86,7 +100,6 @@ class WebSocketService {
     }
   }
 
-  // 이벤트 리스너 등록
   void on(String event, Function(dynamic) handler) {
     debugPrint('👂 Listening to event: $event');
     _socket?.on(event, (data) {
@@ -95,13 +108,11 @@ class WebSocketService {
     });
   }
 
-  // 이벤트 리스너 제거
   void off(String event) {
     debugPrint('🔇 Removing listener: $event');
     _socket?.off(event);
   }
 
-  // 이벤트 발생
   void emit(String event, dynamic data) {
     if (!_isConnected) {
       debugPrint('⚠️ Cannot emit $event: WebSocket not connected');
@@ -111,7 +122,6 @@ class WebSocketService {
     _socket?.emit(event, data);
   }
 
-  // 이벤트 발생 후 응답 받기
   void emitWithAck(String event, dynamic data, Function(dynamic) ack) {
     if (!_isConnected) {
       debugPrint('⚠️ Cannot emit $event: WebSocket not connected');
