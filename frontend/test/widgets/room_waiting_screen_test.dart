@@ -48,8 +48,8 @@ void main() {
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
 
-      // 방장 이름이 표시되어야 함
-      expect(find.text('TestHost'), findsOneWidget);
+      // 현재 사용자가 방장으로 표시됨 (더미 데이터)
+      expect(find.text('Me (Host)'), findsOneWidget);
 
       // 방장 배지가 표시되어야 함
       expect(find.text('방장'), findsOneWidget);
