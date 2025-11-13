@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import '../core/models/room_model.dart';
 import '../core/models/game_member.dart';
 import '../core/models/chat_message.dart';
+import '../core/network/websocket_service.dart';
 
 class RoomWaitingProvider extends ChangeNotifier {
+  final WebSocketService _wsService = WebSocketService();
+
   RoomModel? _currentRoom;
   List<GameMember> _members = [];
   List<ChatMessage> _messages = [];
@@ -25,6 +28,106 @@ class RoomWaitingProvider extends ChangeNotifier {
     return _members.where((m) => !m.isHost).every((m) => m.isReady);
   }
 
+  // WebSocket 이벤트 리스너 설정
+  void _setupWebSocketListeners() {
+    debugPrint('🎧 [RoomWaiting] Setting up WebSocket listeners');
+
+    _wsService.on('playerJoined', (data) {
+      debugPrint('🔔 [RoomWaiting] Player joined: $data');
+      _handlePlayerJoined(data);
+    });
+
+    _wsService.on('playerLeft', (data) {
+      debugPrint('🔔 [RoomWaiting] Player left: $data');
+      _handlePlayerLeft(data);
+    });
+
+    _wsService.on('readyStateChanged', (data) {
+      debugPrint('🔔 [RoomWaiting] Ready state changed: $data');
+      _handleReadyStateChanged(data);
+    });
+
+    _wsService.on('gameStarted', (data) {
+      debugPrint('🔔 [RoomWaiting] Game started: $data');
+      _handleGameStarted(data);
+    });
+
+    _wsService.on('chatMessage', (data) {
+      debugPrint('🔔 [RoomWaiting] Chat message: $data');
+      _handleChatMessage(data);
+    });
+  }
+
+  void _handlePlayerJoined(dynamic data) {
+    if (data['room'] != null) {
+      _updateRoomData(data['room']);
+    }
+
+    if (data['player'] != null) {
+      final playerData = data['player'];
+      addSystemMessage('${playerData['nickname']}님이 입장했습니다.');
+    }
+  }
+
+  void _handlePlayerLeft(dynamic data) {
+    if (data['room'] != null) {
+      _updateRoomData(data['room']);
+    }
+
+    if (data['nickname'] != null) {
+      addSystemMessage('${data['nickname']}님이 퇴장했습니다.');
+    }
+
+    if (data['newHostId'] != null) {
+      addSystemMessage('방장이 변경되었습니다.');
+    }
+  }
+
+  void _handleReadyStateChanged(dynamic data) {
+    if (data['room'] != null) {
+      _updateRoomData(data['room']);
+    }
+  }
+
+  // 게임 시작 처리
+  void _handleGameStarted(dynamic data) {
+    addSystemMessage('게임이 시작됩니다!');
+    // TODO: 게임 화면으로 전환
+  }
+
+  void _handleChatMessage(dynamic data) {
+    final message = ChatMessage(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      senderId: data['playerId'] ?? '',
+      senderName: data['nickname'] ?? 'Unknown',
+      message: data['message'] ?? '',
+      timestamp: data['timestamp'] != null
+          ? DateTime.parse(data['timestamp'])
+          : DateTime.now(),
+    );
+    _messages.add(message);
+    notifyListeners();
+  }
+
+  void _updateRoomData(dynamic roomData) {
+    _currentRoom = RoomModel.fromJson(roomData);
+
+    if (roomData['players'] != null) {
+      _members = (roomData['players'] as List)
+          .map(
+            (p) => GameMember(
+              id: p['id'] ?? '',
+              username: p['nickname'] ?? 'Unknown',
+              isHost: p['isHost'] ?? false,
+              isReady: p['isReady'] ?? false,
+            ),
+          )
+          .toList();
+    }
+
+    notifyListeners();
+  }
+
   Future<void> joinRoom(RoomModel room, String userId) async {
     _isLoading = true;
     notifyListeners();
@@ -32,114 +135,111 @@ class RoomWaitingProvider extends ChangeNotifier {
     _currentRoom = room;
     _currentUserId = userId;
 
-    // TODO: API 호출로 방 정보 가져오기
-    await Future.delayed(const Duration(seconds: 1));
+    _setupWebSocketListeners();
 
-    // 더미 데이터 생성
-    // 테스트를 위해 현재 사용자를 항상 방장으로 설정
-    _currentUserId = userId;
+    _wsService.emitWithAck('getRoomDetail', {'roomId': room.id}, (response) {
+      debugPrint('📥 [RoomWaiting] Room detail response: $response');
 
-    _members = [
-      GameMember(
-        id: userId,
-        username: 'Me (Host)',
-        isHost: true,
-        isReady: true,
-      ),
-      GameMember(id: '2', username: 'Player 2', isHost: false, isReady: true),
-      GameMember(id: '3', username: 'Player 3', isHost: false, isReady: true),
-    ];
+      if (response['success'] == true && response['room'] != null) {
+        _updateRoomData(response['room']);
+        addSystemMessage('${room.name} 방에 입장했습니다.');
+      }
 
-    _messages = [
-      ChatMessage.system('방이 생성되었습니다.'),
-      ChatMessage.system('Player 2님이 입장했습니다.'),
-      ChatMessage.system('Player 3님이 입장했습니다.'),
-    ];
-
-    _isLoading = false;
-    notifyListeners();
+      _isLoading = false;
+      notifyListeners();
+    });
   }
 
   Future<void> toggleReady() async {
     if (isHost) return;
-
-    final memberIndex = _members.indexWhere((m) => m.id == _currentUserId);
-    if (memberIndex == -1) return;
+    if (_currentRoom == null) return;
 
     _isLoading = true;
     notifyListeners();
 
-    // TODO: API 호출로 준비 상태 변경
-    await Future.delayed(const Duration(milliseconds: 500));
+    _wsService.emitWithAck('toggleReady', {'roomId': _currentRoom!.id}, (
+      response,
+    ) {
+      debugPrint('📥 [RoomWaiting] Toggle ready response: $response');
 
-    final member = _members[memberIndex];
-    _members[memberIndex] = member.copyWith(isReady: !member.isReady);
+      if (response['success'] != true) {
+        addSystemMessage('준비 상태 변경에 실패했습니다.');
+      }
 
-    _messages.add(
-      ChatMessage.system(
-        '${member.username}님이 ${!member.isReady ? "준비" : "준비 취소"}했습니다.',
-      ),
-    );
-
-    _isLoading = false;
-    notifyListeners();
+      _isLoading = false;
+      notifyListeners();
+    });
   }
 
   Future<bool> startGame() async {
     if (!canStartGame) return false;
+    if (_currentRoom == null) return false;
 
     _isLoading = true;
     notifyListeners();
 
-    // TODO: API 호출로 게임 시작
-    await Future.delayed(const Duration(seconds: 1));
+    bool success = false;
 
-    _messages.add(ChatMessage.system('게임이 시작됩니다!'));
+    _wsService.emitWithAck('startGame', {'roomId': _currentRoom!.id}, (
+      response,
+    ) {
+      debugPrint('📥 [RoomWaiting] Start game response: $response');
 
-    _isLoading = false;
-    notifyListeners();
+      success = response['success'] == true;
 
-    return true;
+      if (!success) {
+        addSystemMessage(response['message'] ?? '게임 시작에 실패했습니다.');
+      }
+
+      _isLoading = false;
+      notifyListeners();
+    });
+
+    return success;
   }
 
   Future<void> sendMessage(String message) async {
     if (message.trim().isEmpty) return;
+    if (_currentRoom == null) return;
 
-    final member = _members.firstWhere(
-      (m) => m.id == _currentUserId,
-      orElse: () =>
-          GameMember(id: _currentUserId!, username: 'Unknown', isHost: false),
+    _wsService.emitWithAck(
+      'sendChatMessage',
+      {'roomId': _currentRoom!.id, 'message': message.trim()},
+      (response) {
+        debugPrint('📥 [RoomWaiting] Send message response: $response');
+
+        if (response['success'] != true) {
+          addSystemMessage('메시지 전송에 실패했습니다.');
+        }
+      },
     );
-
-    final chatMessage = ChatMessage(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      senderId: _currentUserId!,
-      senderName: member.username,
-      message: message.trim(),
-      timestamp: DateTime.now(),
-    );
-
-    _messages.add(chatMessage);
-    notifyListeners();
-
-    // TODO: API 호출로 메시지 전송
-    await Future.delayed(const Duration(milliseconds: 100));
   }
 
   Future<void> leaveRoom() async {
+    if (_currentRoom == null) return;
+
     _isLoading = true;
     notifyListeners();
 
-    // TODO: API 호출로 방 나가기
-    await Future.delayed(const Duration(milliseconds: 500));
+    _wsService.emitWithAck('leaveRoom', {'roomId': _currentRoom!.id}, (
+      response,
+    ) {
+      debugPrint('📥 [RoomWaiting] Leave room response: $response');
 
-    _currentRoom = null;
-    _members.clear();
-    _messages.clear();
-    _currentUserId = null;
+      _wsService.off('playerJoined');
+      _wsService.off('playerLeft');
+      _wsService.off('readyStateChanged');
+      _wsService.off('gameStarted');
+      _wsService.off('chatMessage');
 
-    _isLoading = false;
-    notifyListeners();
+      _currentRoom = null;
+      _members.clear();
+      _messages.clear();
+      _currentUserId = null;
+
+      _isLoading = false;
+      notifyListeners();
+    });
   }
 
   void addSystemMessage(String message) {
@@ -149,6 +249,12 @@ class RoomWaitingProvider extends ChangeNotifier {
 
   @override
   void dispose() {
+    _wsService.off('playerJoined');
+    _wsService.off('playerLeft');
+    _wsService.off('readyStateChanged');
+    _wsService.off('gameStarted');
+    _wsService.off('chatMessage');
+
     _members.clear();
     _messages.clear();
     super.dispose();
