@@ -7,12 +7,13 @@ import {
     MessageBody,
     ConnectedSocket,
 } from '@nestjs/websockets';
-import { UseGuards, Logger } from '@nestjs/common';
+import { UseGuards, Logger, UseInterceptors } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { RoomService } from './room.service';
 import { WsJwtGuard } from '../common/guards/ws-jwt.guard';
 import { WsUser } from '../common/decorators/ws-user.decorator';
 import { AuthUser } from '../common/decorators/get-user.decorator';
+import { WsLoggingInterceptor } from '../common/interceptors';
 
 @WebSocketGateway({
     cors: {
@@ -21,6 +22,7 @@ import { AuthUser } from '../common/decorators/get-user.decorator';
     namespace: '/game',
 })
 @UseGuards(WsJwtGuard)
+@UseInterceptors(WsLoggingInterceptor)
 export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @WebSocketServer()
     server: Server;
