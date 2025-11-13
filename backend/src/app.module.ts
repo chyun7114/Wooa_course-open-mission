@@ -4,6 +4,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DrizzleModule } from './common/db/drizzle.module';
 import { MemberModule } from './member/member.module';
+import { RoomModule } from './room/room.module';
 
 @Module({
     imports: [
@@ -13,6 +14,7 @@ import { MemberModule } from './member/member.module';
         }),
         DrizzleModule,
         MemberModule,
+        RoomModule,
     ],
     controllers: [AppController],
     providers: [AppService],
