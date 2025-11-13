@@ -1,21 +1,7 @@
-import {
-    Controller,
-    Get,
-    Post,
-    Delete,
-    Body,
-    Param,
-    HttpCode,
-    HttpStatus,
-} from '@nestjs/common';
+import { Controller, Get, Param } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { RoomService } from './room.service';
-import {
-    CreateRoomRequestDto,
-    JoinRoomRequestDto,
-    RoomResponseDto,
-    RoomDetailResponseDto,
-} from './dto';
+import { RoomResponseDto, RoomDetailResponseDto } from './dto';
 import { CommonResponse } from '../common/response';
 
 @ApiTags('Room')

@@ -10,11 +10,10 @@ class DioClient {
   }
 
   static String get _baseUrl {
-    if (kReleaseMode) {
-      return 'https://distinctive-magdalene-chyun7114-f3225d28.koyeb.app';
+    if (kDebugMode) {
+      return 'http://localhost:3000';
     }
-    // 개발 환경에서는 localhost 사용
-    return 'http://localhost:3000';
+    return 'https://distinctive-magdalene-chyun7114-f3225d28.koyeb.app';
   }
 
   DioClient._internal() {
@@ -30,12 +29,30 @@ class DioClient {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
+          if (kDebugMode) {
+            debugPrint('🌐 [${options.method}] ${options.uri}');
+            debugPrint('📤 Request Data: ${options.data}');
+            debugPrint('📋 Request Headers: ${options.headers}');
+          }
           return handler.next(options);
         },
         onResponse: (response, handler) {
+          if (kDebugMode) {
+            debugPrint(
+              '✅ [${response.statusCode}] ${response.requestOptions.uri}',
+            );
+            debugPrint('📥 Response Data: ${response.data}');
+          }
           return handler.next(response);
         },
         onError: (DioException error, handler) {
+          if (kDebugMode) {
+            debugPrint(
+              '🔴 [${error.response?.statusCode}] ${error.requestOptions.uri}',
+            );
+            debugPrint('❌ Error: ${error.message}');
+            debugPrint('📥 Error Response: ${error.response?.data}');
+          }
           return handler.next(error);
         },
       ),

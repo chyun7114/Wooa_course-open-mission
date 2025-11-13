@@ -16,7 +16,8 @@ void main() {
         hostName: 'TestHost',
         currentPlayers: 1,
         maxPlayers: 2,
-        status: 'waiting',
+        isPrivate: false,
+        isPlaying: false,
         createdAt: DateTime.now(),
       );
     });

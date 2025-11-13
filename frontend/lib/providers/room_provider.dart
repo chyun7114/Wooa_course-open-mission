@@ -1,154 +1,206 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../core/models/room_model.dart';
+import '../core/network/websocket_service.dart';
+import '../core/services/room_api_service.dart';
 
 class RoomProvider extends ChangeNotifier {
+  final WebSocketService _wsService = WebSocketService();
+  final RoomApiService _apiService = RoomApiService();
+
   List<RoomModel> _rooms = [];
   List<RoomModel> _filteredRooms = [];
   bool _isLoading = false;
   String _searchQuery = '';
+  String? _userId;
+  String? _nickname;
 
   List<RoomModel> get rooms =>
       _filteredRooms.isEmpty && _searchQuery.isEmpty ? _rooms : _filteredRooms;
   bool get isLoading => _isLoading;
   String get searchQuery => _searchQuery;
+  bool get isConnected => _wsService.isConnected;
+  String? get userId => _userId;
+  String? get nickname => _nickname;
 
   RoomProvider() {
-    // 초기 더미 데이터 생성
-    _generateDummyRooms();
+    _setupWebSocketListeners();
   }
 
-  void _generateDummyRooms() {
-    _rooms = [
-      RoomModel(
-        id: '1',
-        name: '초보자의 방',
-        hostName: 'Player1',
-        currentPlayers: 1,
-        maxPlayers: 2,
-        status: 'waiting',
-        createdAt: DateTime.now().subtract(const Duration(minutes: 5)),
-      ),
-      RoomModel(
-        id: '2',
-        name: '고수들만 오세요',
-        hostName: 'ProGamer',
-        currentPlayers: 2,
-        maxPlayers: 2,
-        status: 'playing',
-        createdAt: DateTime.now().subtract(const Duration(minutes: 10)),
-      ),
-      RoomModel(
-        id: '3',
-        name: '친선 경기',
-        hostName: 'FriendlyUser',
-        currentPlayers: 1,
-        maxPlayers: 2,
-        status: 'waiting',
-        createdAt: DateTime.now().subtract(const Duration(minutes: 3)),
-      ),
-      RoomModel(
-        id: '4',
-        name: '빠른 게임',
-        hostName: 'SpeedRunner',
-        currentPlayers: 2,
-        maxPlayers: 2,
-        status: 'full',
-        createdAt: DateTime.now().subtract(const Duration(minutes: 1)),
-      ),
-      RoomModel(
-        id: '5',
-        name: '연습용 방',
-        hostName: 'Trainer',
-        currentPlayers: 1,
-        maxPlayers: 2,
-        status: 'waiting',
-        createdAt: DateTime.now().subtract(const Duration(minutes: 7)),
-      ),
-    ];
-    _filteredRooms = List.from(_rooms);
-    notifyListeners();
+  // WebSocket 연결 및 사용자 등록
+  void connectWebSocket(String userId, String nickname) {
+    _userId = userId;
+    _nickname = nickname;
+    _wsService.connect(userId, nickname);
+
+    // 연결 후 방 목록 가져오기
+    Future.delayed(const Duration(milliseconds: 500), () {
+      fetchRooms();
+    });
+  }
+
+  // WebSocket 이벤트 리스너 설정
+  void _setupWebSocketListeners() {
+    // 방 목록 업데이트
+    _wsService.on('roomListUpdated', (data) {
+      debugPrint('Room list updated: $data');
+      if (data['rooms'] != null) {
+        _rooms = (data['rooms'] as List)
+            .map((json) => RoomModel.fromJson(json))
+            .toList();
+        _applySearchFilter();
+        notifyListeners();
+      }
+    });
+
+    // 플레이어 입장
+    _wsService.on('playerJoined', (data) {
+      debugPrint('Player joined: $data');
+      // 필요한 경우 UI 업데이트
+    });
+
+    // 플레이어 퇴장
+    _wsService.on('playerLeft', (data) {
+      debugPrint('Player left: $data');
+      // 필요한 경우 UI 업데이트
+    });
   }
 
   Future<void> fetchRooms() async {
+    if (!_wsService.isConnected) {
+      // WebSocket이 연결되지 않은 경우 REST API 사용
+      await _fetchRoomsFromApi();
+      return;
+    }
+
     _isLoading = true;
     notifyListeners();
 
-    // TODO: API 호출로 방 목록 가져오기
-    await Future.delayed(const Duration(seconds: 1));
+    try {
+      _wsService.emitWithAck('getRoomList', {}, (response) {
+        if (response['success'] == true && response['rooms'] != null) {
+          _rooms = (response['rooms'] as List)
+              .map((json) => RoomModel.fromJson(json))
+              .toList();
+          _applySearchFilter();
+        }
+        _isLoading = false;
+        notifyListeners();
+      });
+    } catch (e) {
+      debugPrint('Error fetching rooms: $e');
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 
-    _isLoading = false;
+  Future<void> _fetchRoomsFromApi() async {
+    _isLoading = true;
     notifyListeners();
+
+    try {
+      _rooms = await _apiService.getRoomList();
+      _applySearchFilter();
+    } catch (e) {
+      debugPrint('Error fetching rooms from API: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   void searchRooms(String query) {
     _searchQuery = query;
-    if (query.isEmpty) {
+    _applySearchFilter();
+    notifyListeners();
+  }
+
+  void _applySearchFilter() {
+    if (_searchQuery.isEmpty) {
       _filteredRooms = List.from(_rooms);
     } else {
       _filteredRooms = _rooms.where((room) {
-        return room.name.toLowerCase().contains(query.toLowerCase()) ||
-            room.hostName.toLowerCase().contains(query.toLowerCase());
+        return room.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+            room.hostName.toLowerCase().contains(_searchQuery.toLowerCase());
       }).toList();
     }
-    notifyListeners();
   }
 
-  Future<bool> createRoom(String roomName) async {
-    _isLoading = true;
-    notifyListeners();
-
-    // TODO: API 호출로 방 생성하기
-    await Future.delayed(const Duration(seconds: 1));
-
-    final newRoom = RoomModel(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      name: roomName,
-      hostName: 'CurrentUser', // TODO: 실제 사용자 이름으로 변경
-      currentPlayers: 1,
-      maxPlayers: 2,
-      status: 'waiting',
-      createdAt: DateTime.now(),
-    );
-
-    _rooms.insert(0, newRoom);
-    _filteredRooms = List.from(_rooms);
-
-    _isLoading = false;
-    notifyListeners();
-
-    return true;
-  }
-
-  Future<bool> joinRoom(String roomId) async {
-    _isLoading = true;
-    notifyListeners();
-
-    // TODO: API 호출로 방 참여하기
-    await Future.delayed(const Duration(seconds: 1));
-
-    final roomIndex = _rooms.indexWhere((room) => room.id == roomId);
-    if (roomIndex != -1) {
-      final room = _rooms[roomIndex];
-      if (room.canJoin) {
-        // 방 참여 성공 로직
-        _isLoading = false;
-        notifyListeners();
-        return true;
-      }
+  Future<Map<String, dynamic>> createRoom({
+    required String title,
+    required int maxPlayers,
+    String? password,
+  }) async {
+    if (!_wsService.isConnected) {
+      return {'success': false, 'message': 'WebSocket이 연결되지 않았습니다.'};
     }
 
-    _isLoading = false;
+    _isLoading = true;
     notifyListeners();
-    return false;
+
+    final completer = Completer<Map<String, dynamic>>();
+
+    _wsService.emitWithAck(
+      'createRoom',
+      {
+        'title': title,
+        'maxPlayers': maxPlayers,
+        if (password != null && password.isNotEmpty) 'password': password,
+      },
+      (response) {
+        _isLoading = false;
+        notifyListeners();
+        completer.complete(response as Map<String, dynamic>);
+      },
+    );
+
+    return completer.future;
+  }
+
+  Future<Map<String, dynamic>> joinRoom(
+    String roomId, {
+    String? password,
+  }) async {
+    if (!_wsService.isConnected) {
+      return {'success': false, 'message': 'WebSocket이 연결되지 않았습니다.'};
+    }
+
+    _isLoading = true;
+    notifyListeners();
+
+    final completer = Completer<Map<String, dynamic>>();
+
+    _wsService.emitWithAck(
+      'joinRoom',
+      {
+        'roomId': roomId,
+        if (password != null && password.isNotEmpty) 'password': password,
+      },
+      (response) {
+        _isLoading = false;
+        notifyListeners();
+        completer.complete(response as Map<String, dynamic>);
+      },
+    );
+
+    return completer.future;
   }
 
   void clearSearch() {
     _searchQuery = '';
-    _filteredRooms = List.from(_rooms);
+    _applySearchFilter();
     notifyListeners();
   }
 
   void refresh() {
     fetchRooms();
+  }
+
+  @override
+  void dispose() {
+    _wsService.off('roomListUpdated');
+    _wsService.off('playerJoined');
+    _wsService.off('playerLeft');
+    super.dispose();
   }
 }
