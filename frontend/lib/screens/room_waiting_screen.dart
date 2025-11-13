@@ -7,6 +7,7 @@ import '../widgets/waiting_room/player_card.dart';
 import '../widgets/waiting_room/chat_panel.dart';
 import '../widgets/waiting_room/ready_button.dart';
 import '../widgets/waiting_room/start_game_button.dart';
+import 'multiplayer_game_screen.dart';
 
 class RoomWaitingScreen extends StatefulWidget {
   final RoomModel room;
@@ -212,10 +213,17 @@ class _RoomWaitingScreenState extends State<RoomWaitingScreen> {
     final success = await provider.startGame();
 
     if (mounted && success) {
-      // TODO: 게임 화면으로 이동
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('게임을 시작합니다!')));
+      // 멀티플레이 게임 화면으로 이동
+      final playerIds = provider.members.map((m) => m.id).toList();
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => MultiplayerGameScreen(
+            roomId: widget.room.id,
+            playerIds: playerIds,
+          ),
+        ),
+      );
     }
   }
 
@@ -305,7 +313,7 @@ class _RoomWaitingScreenState extends State<RoomWaitingScreen> {
       // 빈 슬롯
       return Container(
         decoration: BoxDecoration(
-          color: Colors.grey[900]!.withOpacity(0.3),
+          color: Colors.grey[900]!.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: Colors.grey[800]!,
