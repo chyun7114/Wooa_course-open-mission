@@ -1,6 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class SignInResponseDto {
+    @ApiProperty({ description: '사용자 ID', example: 7 })
+    userId: number;
+
     @ApiProperty({ description: '사용자명', example: 'lumi' })
     username: string;
 

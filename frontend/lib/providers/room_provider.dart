@@ -27,11 +27,9 @@ class RoomProvider extends ChangeNotifier {
     _setupWebSocketListeners();
   }
 
-  // WebSocket 연결 및 사용자 등록
-  void connectWebSocket(String userId, String nickname) {
-    _userId = userId;
-    _nickname = nickname;
-    _wsService.connect(userId, nickname);
+  // WebSocket 연결 (토큰은 자동으로 AuthStorageService에서 가져옴)
+  Future<void> connectWebSocket() async {
+    await _wsService.connect();
 
     // 연결 후 방 목록 가져오기
     Future.delayed(const Duration(milliseconds: 500), () {
