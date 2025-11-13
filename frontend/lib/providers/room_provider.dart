@@ -30,7 +30,6 @@ class RoomProvider extends ChangeNotifier {
   Future<void> connectWebSocket() async {
     await _wsService.connect();
 
-    // AuthStorageService에서 사용자 정보 가져오기
     _userId = await _authStorage.getUserId();
     _nickname = await _authStorage.getNickname();
 

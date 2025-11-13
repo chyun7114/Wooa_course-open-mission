@@ -16,7 +16,7 @@ import { AuthUser } from '../common/decorators/get-user.decorator';
 
 @WebSocketGateway({
     cors: {
-        origin: '*', // 프로덕션에서는 특정 도메인으로 제한해야 함
+        origin: '*',
     },
     namespace: '/game',
 })
@@ -36,13 +36,11 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
     handleDisconnect(client: Socket) {
         this.logger.log(`Client disconnected: ${client.id}`);
 
-        // JWT에서 추출한 userId 사용
         const user = client.data?.user as AuthUser;
         if (!user) {
             return;
         }
 
-        // 연결이 끊긴 클라이언트가 속한 방에서 제거
         const room = this.roomService.findRoomBySocketId(client.id);
         if (room) {
             const player = room.getPlayerBySocketId(client.id);
@@ -50,7 +48,6 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
                 const result = this.roomService.leaveRoom(room.id, player.id);
 
                 if (!result.roomDeleted) {
-                    // 방이 삭제되지 않았으면 다른 플레이어들에게 알림
                     this.server.to(room.id).emit('playerLeft', {
                         playerId: player.id,
                         nickname: player.nickname,
@@ -88,10 +85,8 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
             data.password,
         );
 
-        // 방 생성자를 해당 방 소켓 룸에 추가
         client.join(room.id);
 
-        // 모든 클라이언트에게 방 목록 업데이트 알림
         this.server.emit('roomListUpdated', {
             rooms: this.roomService.findAllRooms().map((r) => r.toResponse()),
         });
@@ -124,10 +119,8 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
             return { success: false, message: result.message };
         }
 
-        // 플레이어를 해당 방 소켓 룸에 추가
         client.join(data.roomId);
 
-        // 해당 방의 다른 플레이어들에게 새 플레이어 입장 알림
         client.to(data.roomId).emit('playerJoined', {
             player: {
                 id: user.userId,
@@ -138,7 +131,6 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
             room: result.room.toDetailResponse(),
         });
 
-        // 모든 클라이언트에게 방 목록 업데이트 알림
         this.server.emit('roomListUpdated', {
             rooms: this.roomService.findAllRooms().map((r) => r.toResponse()),
         });
@@ -165,7 +157,6 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
             client.leave(data.roomId);
 
             if (!result.roomDeleted) {
-                // 방이 삭제되지 않았으면 다른 플레이어들에게 알림
                 const room = this.roomService.findRoom(data.roomId);
                 if (room) {
                     this.server.to(data.roomId).emit('playerLeft', {
@@ -177,7 +168,6 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
                 }
             }
 
-            // 모든 클라이언트에게 방 목록 업데이트 알림
             this.server.emit('roomListUpdated', {
                 rooms: this.roomService
                     .findAllRooms()
@@ -202,7 +192,6 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
         if (success) {
             const room = this.roomService.findRoom(data.roomId);
             if (room) {
-                // 방의 모든 플레이어에게 준비 상태 변경 알림
                 this.server.to(data.roomId).emit('readyStateChanged', {
                     playerId: user.userId,
                     room: room.toDetailResponse(),
@@ -227,12 +216,10 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
         if (result.success) {
             const room = this.roomService.findRoom(data.roomId);
             if (room) {
-                // 방의 모든 플레이어에게 게임 시작 알림
                 this.server.to(data.roomId).emit('gameStarted', {
                     room: room.toDetailResponse(),
                 });
 
-                // 모든 클라이언트에게 방 목록 업데이트 알림 (게임 중인 방은 목록에서 제거됨)
                 this.server.emit('roomListUpdated', {
                     rooms: this.roomService
                         .findAllRooms()
@@ -253,7 +240,6 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
             `Chat message in ${data.roomId} from ${user.nickname}: ${data.message}`,
         );
 
-        // 방의 모든 플레이어에게 채팅 메시지 전송
         this.server.to(data.roomId).emit('chatMessage', {
             playerId: user.userId,
             nickname: user.nickname,
