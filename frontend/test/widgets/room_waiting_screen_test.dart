@@ -16,7 +16,8 @@ void main() {
         hostName: 'TestHost',
         currentPlayers: 2,
         maxPlayers: 2,
-        status: 'waiting',
+        isPrivate: false,
+        isPlaying: false,
         createdAt: DateTime.now(),
       );
     });
@@ -112,7 +113,8 @@ void main() {
                 hostName: 'Host',
                 currentPlayers: 1,
                 maxPlayers: 2,
-                status: 'waiting',
+                isPrivate: false,
+                isPlaying: false,
                 createdAt: DateTime.now(),
               ),
               userId: 'user123',
