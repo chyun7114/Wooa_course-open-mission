@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import '../core/models/room_model.dart';
 import '../core/network/websocket_service.dart';
 import '../core/services/room_api_service.dart';
+import '../core/services/auth_storage_service.dart';
 
 class RoomProvider extends ChangeNotifier {
   final WebSocketService _wsService = WebSocketService();
   final RoomApiService _apiService = RoomApiService();
+  final AuthStorageService _authStorage = AuthStorageService();
 
   List<RoomModel> _rooms = [];
   List<RoomModel> _filteredRooms = [];
@@ -23,50 +25,49 @@ class RoomProvider extends ChangeNotifier {
   String? get userId => _userId;
   String? get nickname => _nickname;
 
-  RoomProvider() {
-    _setupWebSocketListeners();
-  }
+  RoomProvider() {}
 
-  // WebSocket 연결 (토큰은 자동으로 AuthStorageService에서 가져옴)
   Future<void> connectWebSocket() async {
     await _wsService.connect();
 
-    // 연결 후 방 목록 가져오기
+    // AuthStorageService에서 사용자 정보 가져오기
+    _userId = await _authStorage.getUserId();
+    _nickname = await _authStorage.getNickname();
+
+    debugPrint('👤 RoomProvider - User loaded: $_nickname ($_userId)');
+
+    _setupWebSocketListeners();
     Future.delayed(const Duration(milliseconds: 500), () {
       fetchRooms();
     });
   }
 
-  // WebSocket 이벤트 리스너 설정
   void _setupWebSocketListeners() {
-    // 방 목록 업데이트
+    debugPrint('🎧 Setting up WebSocket listeners');
+
     _wsService.on('roomListUpdated', (data) {
-      debugPrint('Room list updated: $data');
+      debugPrint('🔔 Room list updated event received: $data');
       if (data['rooms'] != null) {
         _rooms = (data['rooms'] as List)
             .map((json) => RoomModel.fromJson(json))
             .toList();
         _applySearchFilter();
         notifyListeners();
+        debugPrint('✅ Room list updated: ${_rooms.length} rooms');
       }
     });
 
-    // 플레이어 입장
     _wsService.on('playerJoined', (data) {
-      debugPrint('Player joined: $data');
-      // 필요한 경우 UI 업데이트
+      debugPrint('🔔 Player joined event: $data');
     });
 
-    // 플레이어 퇴장
     _wsService.on('playerLeft', (data) {
-      debugPrint('Player left: $data');
-      // 필요한 경우 UI 업데이트
+      debugPrint('🔔 Player left event: $data');
     });
   }
 
   Future<void> fetchRooms() async {
     if (!_wsService.isConnected) {
-      // WebSocket이 연결되지 않은 경우 REST API 사용
       await _fetchRoomsFromApi();
       return;
     }

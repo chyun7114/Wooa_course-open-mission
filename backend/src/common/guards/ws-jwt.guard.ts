@@ -24,9 +24,13 @@ export class WsJwtGuard implements CanActivate {
                 'default-secret';
             const payload = this.jwtService.verify(token, { secret });
 
-            // 사용자 정보를 클라이언트 객체에 저장
+            // 사용자 정보를 클라이언트 객체에 저장 (JwtStrategy와 동일한 형식으로 변환)
             client.data = client.data || {};
-            client.data.user = payload;
+            client.data.user = {
+                userId: payload.sub.toString(),
+                nickname: payload.username,
+                email: payload.email,
+            };
 
             return true;
         } catch (error) {
