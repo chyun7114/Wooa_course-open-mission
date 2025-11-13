@@ -22,7 +22,13 @@ class _RoomListScreenState extends State<RoomListScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<RoomProvider>().fetchRooms();
+      final roomProvider = context.read<RoomProvider>();
+
+      // WebSocket 연결 (임시로 더미 사용자 정보 사용)
+      final userId = 'user_${DateTime.now().millisecondsSinceEpoch}';
+      final nickname = 'Player${DateTime.now().millisecondsSinceEpoch % 1000}';
+
+      roomProvider.connectWebSocket(userId, nickname);
     });
   }
 
@@ -33,24 +39,37 @@ class _RoomListScreenState extends State<RoomListScreen> {
   }
 
   void _showCreateRoomDialog() {
-    final TextEditingController roomNameController = TextEditingController();
-
     showDialog(
       context: context,
       builder: (context) => CreateRoomDialog(
-        controller: roomNameController,
-        onCancel: () => Navigator.pop(context),
-        onCreate: () async {
-          if (roomNameController.text.trim().isNotEmpty) {
-            final success = await context.read<RoomProvider>().createRoom(
-              roomNameController.text.trim(),
-            );
+        onCreate: (title, maxPlayers, password) async {
+          final result = await context.read<RoomProvider>().createRoom(
+            title: title,
+            maxPlayers: maxPlayers,
+            password: password,
+          );
 
-            if (mounted) {
-              Navigator.pop(context);
-              if (success) {
-                _showSnackBar('방이 생성되었습니다');
+          if (mounted) {
+            if (result['success'] == true) {
+              _showSnackBar('방이 생성되었습니다');
+              // 생성된 방으로 자동 입장
+              if (result['room'] != null) {
+                final roomData = result['room'];
+                final roomProvider = context.read<RoomProvider>();
+
+                final room = RoomModel.fromJson(roomData);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => RoomWaitingScreen(
+                      room: room,
+                      userId: roomProvider.userId ?? 'guest',
+                    ),
+                  ),
+                );
               }
+            } else {
+              _showSnackBar(result['message'] ?? '방 생성에 실패했습니다', isError: true);
             }
           }
         },
@@ -162,23 +181,72 @@ class _RoomListScreenState extends State<RoomListScreen> {
       return;
     }
 
-    final success = await context.read<RoomProvider>().joinRoom(room.id);
+    // 비밀번호가 필요한 경우 입력 받기
+    String? password;
+    if (room.isPrivate) {
+      password = await _showPasswordDialog();
+      if (password == null) return; // 취소한 경우
+    }
+
+    final result = await context.read<RoomProvider>().joinRoom(
+      room.id,
+      password: password,
+    );
 
     if (mounted) {
-      if (success) {
+      if (result['success'] == true) {
         // 방 대기실 화면으로 이동
+        final roomProvider = context.read<RoomProvider>();
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => RoomWaitingScreen(
               room: room,
-              userId: 'current_user_id', // TODO: 실제 사용자 ID로 변경
+              userId: roomProvider.userId ?? 'guest',
             ),
           ),
         );
       } else {
-        _showSnackBar('방 참여에 실패했습니다', isError: true);
+        _showSnackBar(result['message'] ?? '방 참여에 실패했습니다', isError: true);
       }
     }
+  }
+
+  Future<String?> _showPasswordDialog() async {
+    final TextEditingController passwordController = TextEditingController();
+
+    return showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.grey[900],
+        title: const Text('비밀번호 입력', style: TextStyle(color: Colors.white)),
+        content: TextField(
+          controller: passwordController,
+          obscureText: true,
+          style: const TextStyle(color: Colors.white),
+          decoration: InputDecoration(
+            hintText: '비밀번호',
+            hintStyle: TextStyle(color: Colors.grey[600]),
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.grey[700]!),
+            ),
+            focusedBorder: const OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.blue),
+            ),
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('취소'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(passwordController.text),
+            child: const Text('확인'),
+          ),
+        ],
+      ),
+    );
   }
 }

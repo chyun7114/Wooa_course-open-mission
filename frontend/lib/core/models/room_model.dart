@@ -4,7 +4,8 @@ class RoomModel {
   final String hostName;
   final int currentPlayers;
   final int maxPlayers;
-  final String status; // 'waiting', 'playing', 'full'
+  final bool isPrivate;
+  final bool isPlaying;
   final DateTime createdAt;
 
   RoomModel({
@@ -13,18 +14,20 @@ class RoomModel {
     required this.hostName,
     required this.currentPlayers,
     required this.maxPlayers,
-    required this.status,
+    required this.isPrivate,
+    required this.isPlaying,
     required this.createdAt,
   });
 
   factory RoomModel.fromJson(Map<String, dynamic> json) {
     return RoomModel(
       id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      hostName: json['hostName'] ?? '',
+      name: json['title'] ?? json['name'] ?? '',
+      hostName: json['hostNickname'] ?? json['hostName'] ?? '',
       currentPlayers: json['currentPlayers'] ?? 0,
       maxPlayers: json['maxPlayers'] ?? 2,
-      status: json['status'] ?? 'waiting',
+      isPrivate: json['isPrivate'] ?? false,
+      isPlaying: json['isPlaying'] ?? false,
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'])
           : DateTime.now(),
@@ -34,16 +37,22 @@ class RoomModel {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'name': name,
-      'hostName': hostName,
+      'title': name,
+      'hostNickname': hostName,
       'currentPlayers': currentPlayers,
       'maxPlayers': maxPlayers,
-      'status': status,
+      'isPrivate': isPrivate,
+      'isPlaying': isPlaying,
       'createdAt': createdAt.toIso8601String(),
     };
   }
 
   bool get isFull => currentPlayers >= maxPlayers;
-  bool get isPlaying => status == 'playing';
   bool get canJoin => !isFull && !isPlaying;
+
+  String get status {
+    if (isPlaying) return 'playing';
+    if (isFull) return 'full';
+    return 'waiting';
+  }
 }

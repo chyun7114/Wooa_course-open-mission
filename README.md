@@ -1,11 +1,15 @@
 ### 어려운/낯선 문제 해커톤
+
 Flutter + NestJS를 활용하여 멀티플레이를 지원하는 웹/앱 테트리스를 만드는 것을 목표로 한다.
 
 ## 🎮 플레이하기
+
 **GitHub Pages 배포**: https://chyun7114.github.io/Wooa_course-open-mission/
 
 ### 기능 구현 목록
+
 **Front-end(Flutter)**
+
 - [x] 보드 모델 구현
 - [x] 테트로미노 블록 정의 및 스폰/랜덤 생성
 - [x] 충돌 검사
@@ -22,12 +26,14 @@ Flutter + NestJS를 활용하여 멀티플레이를 지원하는 웹/앱 테트�
 **Back-end(NestJS)**
 
 **유저 시스템**
-- [ ] 회원가입/로그인 API (JWT 인증)
-- [ ] 유저 프로필 조회/수정
-- [ ] 비밀번호 암호화 (bcrypt)
-- [ ] 토큰 갱신(refresh token)
+
+- [x] 회원가입/로그인 API (JWT 인증)
+- [x] 유저 프로필 조회/수정
+- [x] 비밀번호 암호화 (bcrypt)
+- [x] 토큰 갱신(refresh token)
 
 **랭킹 시스템**
+
 - [ ] 싱글 플레이 게임 결과 저장 API
 - [ ] 전체 랭킹 조회 (페이지네이션)
 - [ ] 개인 최고 기록 조회
@@ -35,6 +41,7 @@ Flutter + NestJS를 활용하여 멀티플레이를 지원하는 웹/앱 테트�
 - [ ] 랭킹 캐싱 (Redis 옵션)
 
 **멀티플레이 시스템**
+
 - [ ] WebSocket 연결 관리 (Gateway)
 - [ ] 방 생성/입장/퇴장
 - [ ] 방 목록 조회 및 검색
@@ -46,6 +53,7 @@ Flutter + NestJS를 활용하여 멀티플레이를 지원하는 웹/앱 테트�
 - [ ] 관전 모드 (옵션)
 
 **인프라 & 부가기능**
+
 - [ ] 데이터베이스 설계 및 마이그레이션 (TypeORM/Prisma)
 - [ ] API 문서화 (Swagger)
 - [ ] 에러 핸들링 및 로깅
@@ -55,12 +63,15 @@ Flutter + NestJS를 활용하여 멀티플레이를 지원하는 웹/앱 테트�
 - [ ] 배포 (Docker, AWS/Vercel 등)
 
 ### 컨벤션
+
 **커밋 컨벤션**
+
 ```PlainText
 {type}({scope}): {description}
 ```
 
 **브랜치 네이밍 컨벤션 (백엔드 작업 시작 후 설정)**
+
 ```
 main (프로덕션)
 ├── develop (개발 통합)
@@ -80,4 +91,3 @@ main
 │   ├── feature/frontend/multiplayer-ui
 │   └── feature/shared/api-contracts
 ```
-
