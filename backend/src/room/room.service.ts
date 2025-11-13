@@ -95,14 +95,12 @@ export class RoomService {
         const wasHost = room.hostId === playerId;
         room.removePlayer(playerId);
 
-        // 방이 비었으면 삭제
         if (room.isEmpty()) {
             this.rooms.delete(roomId);
             this.logger.log(`Room ${roomId} deleted (empty)`);
             return { success: true, roomDeleted: true };
         }
 
-        // 방장이 바뀌었으면 새 방장 ID 반환
         if (wasHost && room.hostId !== playerId) {
             this.logger.log(`New host for room ${roomId}: ${room.hostId}`);
             return {

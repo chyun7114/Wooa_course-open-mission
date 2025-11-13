@@ -1,10 +1,12 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DrizzleModule } from './common/db/drizzle.module';
 import { MemberModule } from './member/member.module';
 import { RoomModule } from './room/room.module';
+import { LoggingInterceptor } from './common/interceptors';
 
 @Module({
     imports: [
@@ -17,6 +19,12 @@ import { RoomModule } from './room/room.module';
         RoomModule,
     ],
     controllers: [AppController],
-    providers: [AppService],
+    providers: [
+        AppService,
+        {
+            provide: APP_INTERCEPTOR,
+            useClass: LoggingInterceptor,
+        },
+    ],
 })
 export class AppModule {}
