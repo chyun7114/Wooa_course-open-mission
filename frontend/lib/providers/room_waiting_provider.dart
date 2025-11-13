@@ -36,24 +36,24 @@ class RoomWaitingProvider extends ChangeNotifier {
     await Future.delayed(const Duration(seconds: 1));
 
     // 더미 데이터 생성
-    // 방장이 userId와 같으면 방을 생성한 경우
-    final isCreator = userId == '1'; // TODO: 실제 방장 ID와 비교
+    // 테스트를 위해 현재 사용자를 항상 방장으로 설정
+    _currentUserId = userId;
 
     _members = [
-      GameMember(id: '1', username: room.hostName, isHost: true, isReady: true),
-      // 방장이 아니면 현재 사용자 추가
-      if (!isCreator)
-        GameMember(
-          id: userId,
-          username: 'CurrentUser',
-          isHost: false,
-          isReady: false,
-        ),
+      GameMember(
+        id: userId,
+        username: 'Me (Host)',
+        isHost: true,
+        isReady: true,
+      ),
+      GameMember(id: '2', username: 'Player 2', isHost: false, isReady: true),
+      GameMember(id: '3', username: 'Player 3', isHost: false, isReady: true),
     ];
 
     _messages = [
-      ChatMessage.system('${room.hostName}님이 방을 생성했습니다.'),
-      if (room.currentPlayers > 1) ChatMessage.system('CurrentUser님이 입장했습니다.'),
+      ChatMessage.system('방이 생성되었습니다.'),
+      ChatMessage.system('Player 2님이 입장했습니다.'),
+      ChatMessage.system('Player 3님이 입장했습니다.'),
     ];
 
     _isLoading = false;
