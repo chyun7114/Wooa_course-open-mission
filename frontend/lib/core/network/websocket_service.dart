@@ -1,5 +1,6 @@
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:flutter/foundation.dart';
+import '../services/auth_storage_service.dart';
 
 class WebSocketService {
   static final WebSocketService _instance = WebSocketService._internal();
@@ -17,31 +18,46 @@ class WebSocketService {
   bool get isConnected => _isConnected;
   IO.Socket? get socket => _socket;
 
-  void connect(String userId, String nickname) {
+  Future<void> connect() async {
     if (_socket != null && _isConnected) {
-      debugPrint('WebSocket already connected');
+      debugPrint('✅ WebSocket already connected');
+      return;
+    }
+
+    // AuthStorageService에서 토큰 가져오기
+    final token = await AuthStorageService().getAccessToken();
+    final userId = await AuthStorageService().getUserId();
+    final nickname = await AuthStorageService().getNickname();
+
+    if (token == null || userId == null || nickname == null) {
+      debugPrint('❌ Cannot connect WebSocket: Missing auth data');
+      debugPrint('   Token: ${token != null ? "exists" : "null"}');
+      debugPrint('   UserId: $userId');
+      debugPrint('   Nickname: $nickname');
       return;
     }
 
     debugPrint('🔌 Connecting to WebSocket: $_baseUrl/game');
     debugPrint('👤 User: $nickname ($userId)');
+    debugPrint('🔑 Token: ${token.substring(0, 20)}...');
 
     _socket = IO.io(
       '$_baseUrl/game',
       IO.OptionBuilder()
           .setTransports(['websocket'])
           .disableAutoConnect()
-          .setExtraHeaders({'foo': 'bar'})
+          .setAuth({
+            'token': token, // JWT 토큰을 auth에 추가
+          })
+          .setExtraHeaders({
+            'Authorization': 'Bearer $token', // Authorization 헤더에도 추가
+          })
           .build(),
     );
 
     _socket?.onConnect((_) {
-      debugPrint('✅ WebSocket connected');
+      debugPrint('✅ WebSocket connected with JWT authentication');
       _isConnected = true;
-
-      // 연결되면 바로 사용자 등록
-      debugPrint('📤 Emitting register: userId=$userId, nickname=$nickname');
-      _socket?.emit('register', {'userId': userId, 'nickname': nickname});
     });
 
     _socket?.onDisconnect((_) {

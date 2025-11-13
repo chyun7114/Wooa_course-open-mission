@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import '../core/models/auth_models.dart';
 import '../core/services/auth_service.dart';
+import '../core/services/auth_storage_service.dart';
 
 class AuthProvider with ChangeNotifier {
   final AuthService _authService = AuthService();
+  final AuthStorageService _authStorage = AuthStorageService();
 
   bool _isLoading = false;
   String? _errorMessage;
@@ -60,6 +62,15 @@ class AuthProvider with ChangeNotifier {
       if (response.success && response.accessToken != null) {
         _accessToken = response.accessToken;
         _isAuthenticated = true;
+
+        // ✅ AuthStorageService에 토큰과 사용자 정보 저장
+        await _authStorage.saveAuthData(
+          accessToken: response.accessToken!,
+          userId: response.userId?.toString() ?? '',
+          nickname: response.username ?? '',
+        );
+
+        debugPrint('✅ Login successful, token and user data saved');
       }
 
       _isLoading = false;
@@ -75,11 +86,13 @@ class AuthProvider with ChangeNotifier {
   }
 
   // 로그아웃
-  void logout() {
+  Future<void> logout() async {
     _authService.logout();
+    await _authStorage.clearAuthData(); // ✅ 저장된 토큰도 삭제
     _accessToken = null;
     _isAuthenticated = false;
     notifyListeners();
+    debugPrint('✅ Logged out, all auth data cleared');
   }
 
   // 에러 메시지 클리어

@@ -51,6 +51,7 @@ export class MemberService {
         const accessToken = this.jwtService.sign(payload);
 
         return {
+            userId: member.id,
             username: member.username,
             email: member.email,
             accessToken,
