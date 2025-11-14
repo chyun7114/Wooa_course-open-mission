@@ -1,12 +1,10 @@
 import { Module } from '@nestjs/common';
-import { RoomController } from './room.controller';
-import { RoomService } from './room.service';
-import { RoomGateway } from './room.gateway';
+import { GameService } from './game.service';
+import { GameGateway } from './game.gateway';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from '../common/strategies/jwt.strategy';
 import { PassportModule } from '@nestjs/passport';
-import { GameModule } from '../game/game.module';
 
 @Module({
     imports: [
@@ -22,10 +20,8 @@ import { GameModule } from '../game/game.module';
             }),
             inject: [ConfigService],
         }),
-        GameModule,
     ],
-    controllers: [RoomController],
-    providers: [RoomService, RoomGateway, JwtStrategy],
-    exports: [RoomService],
+    providers: [GameService, GameGateway, JwtStrategy],
+    exports: [GameService],
 })
-export class RoomModule {}
+export class GameModule {}

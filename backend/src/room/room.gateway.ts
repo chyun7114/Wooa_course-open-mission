@@ -10,6 +10,7 @@ import {
 import { UseGuards, Logger, UseInterceptors } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { RoomService } from './room.service';
+import { GameService } from '../game/game.service';
 import { WsJwtGuard } from '../common/guards/ws-jwt.guard';
 import { WsUser } from '../common/decorators/ws-user.decorator';
 import { AuthUser } from '../common/decorators/get-user.decorator';
@@ -29,7 +30,10 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     private readonly logger = new Logger(RoomGateway.name);
 
-    constructor(private readonly roomService: RoomService) {}
+    constructor(
+        private readonly roomService: RoomService,
+        private readonly gameService: GameService,
+    ) {}
 
     handleConnection(client: Socket) {
         this.logger.log(`Client connected: ${client.id}`);
@@ -218,6 +222,13 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
         if (result.success) {
             const room = this.roomService.findRoom(data.roomId);
             if (room) {
+                // GameService로 게임 상태 생성
+                const players = Array.from(room.players.values()).map((p) => ({
+                    id: p.id,
+                    nickname: p.nickname,
+                }));
+                this.gameService.startGame(data.roomId, players);
+
                 this.server.to(data.roomId).emit('gameStarted', {
                     room: room.toDetailResponse(),
                 });
