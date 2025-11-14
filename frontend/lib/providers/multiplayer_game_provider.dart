@@ -135,11 +135,13 @@ class MultiplayerGameProvider with ChangeNotifier {
     List<Map<String, dynamic>> players,
   ) {
     _myPlayerId = myPlayerId;
+    debugPrint('🎮 내 플레이어 ID: $_myPlayerId (타입: ${_myPlayerId.runtimeType})');
 
     final playerStates = <String, PlayerGameState>{};
     for (var player in players) {
+      final playerId = player['id']?.toString() ?? '';
       final state = PlayerGameState(
-        playerId: player['id'],
+        playerId: playerId,
         nickname: player['nickname'],
         isAlive: true,
         rank: 0,
@@ -147,7 +149,8 @@ class MultiplayerGameProvider with ChangeNotifier {
         level: 1,
         linesCleared: 0,
       );
-      playerStates[player['id']] = state;
+      playerStates[playerId] = state;
+      debugPrint('  플레이어 등록: $playerId - ${player['nickname']}');
     }
 
     _gameState = MultiplayerGameState(roomId: roomId, players: playerStates);
@@ -160,19 +163,21 @@ class MultiplayerGameProvider with ChangeNotifier {
   void _setupListeners() {
     // 게임 상태 업데이트
     _wsService.on('gameStateUpdated', (data) {
-      print('🔔 gameStateUpdated 이벤트 수신: ${data != null ? 'OK' : 'NULL'}');
+      debugPrint('🔔 gameStateUpdated 이벤트 수신: ${data != null ? 'OK' : 'NULL'}');
 
       if (data == null || _gameState == null) {
-        print('❌ data 또는 _gameState가 null입니다');
+        debugPrint('❌ data 또는 _gameState가 null입니다');
         return;
       }
 
-      final playerId = data['playerId'] as String?;
+      // playerId를 문자열로 변환 (숫자로 올 수 있음)
+      final playerIdRaw = data['playerId'];
+      final playerId = playerIdRaw?.toString();
       final score = data['score'] as int?;
       final level = data['level'] as int?;
       final linesCleared = data['linesCleared'] as int?;
 
-      print('👤 플레이어: $playerId, 점수: $score, 레벨: $level');
+      debugPrint('👤 플레이어: $playerId (타입: ${playerIdRaw.runtimeType}), 점수: $score, 레벨: $level');
 
       List<List<int>>? board;
       if (data['board'] != null) {
@@ -180,14 +185,14 @@ class MultiplayerGameProvider with ChangeNotifier {
           board = (data['board'] as List)
               .map((row) => (row as List).map((cell) => cell as int).toList())
               .toList();
-          print(
+          debugPrint(
             '📦 보드 데이터 수신: ${board.length}x${board.isNotEmpty ? board[0].length : 0} from $playerId',
           );
         } catch (e) {
-          print('❌ 보드 파싱 에러: $e');
+          debugPrint('❌ 보드 파싱 에러: $e');
         }
       } else {
-        print('⚠️ 보드 데이터가 없습니다');
+        debugPrint('⚠️ 보드 데이터가 없습니다');
       }
 
       if (playerId != null && _gameState!.players.containsKey(playerId)) {
@@ -203,13 +208,17 @@ class MultiplayerGameProvider with ChangeNotifier {
           players: Map.from(_gameState!.players)..[playerId] = updated,
         );
 
-        print(
+        debugPrint(
           '✅ 플레이어 상태 업데이트 완료: ${updated.nickname}, 보드: ${updated.board != null ? "있음" : "없음"}',
         );
-        notifyListeners();
+        
+        // notifyListeners를 다음 프레임에서 호출 (빌드 중 호출 방지)
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          notifyListeners();
+        });
       } else {
-        print('❌ 플레이어 ID를 찾을 수 없음: $playerId');
-        print('현재 플레이어 목록: ${_gameState!.players.keys.join(", ")}');
+        debugPrint('❌ 플레이어 ID를 찾을 수 없음: $playerId (타입: ${playerIdRaw.runtimeType})');
+        debugPrint('현재 플레이어 목록: ${_gameState!.players.keys.join(", ")}');
       }
     });
 
@@ -217,18 +226,23 @@ class MultiplayerGameProvider with ChangeNotifier {
     _wsService.on('attacked', (data) {
       if (data == null) return;
 
-      final targetId = data['targetId'] as String?;
+      final targetIdRaw = data['targetId'];
+      final targetId = targetIdRaw?.toString();
       final attackLines = data['attackLines'] as int? ?? 0;
 
       if (targetId == _myPlayerId && attackLines > 0) {
         _incomingAttackLines += attackLines;
-        notifyListeners();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          notifyListeners();
+        });
 
         // 3초 후 공격 표시 제거
         Future.delayed(const Duration(seconds: 3), () {
           if (_incomingAttackLines >= attackLines) {
             _incomingAttackLines -= attackLines;
-            notifyListeners();
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              notifyListeners();
+            });
           }
         });
       }
@@ -238,7 +252,8 @@ class MultiplayerGameProvider with ChangeNotifier {
     _wsService.on('playerGameOver', (data) {
       if (data == null || _gameState == null) return;
 
-      final playerId = data['playerId'] as String?;
+      final playerIdRaw = data['playerId'];
+      final playerId = playerIdRaw?.toString();
       final rank = data['rank'] as int?;
 
       if (playerId != null && _gameState!.players.containsKey(playerId)) {
@@ -250,7 +265,9 @@ class MultiplayerGameProvider with ChangeNotifier {
               rank: rank ?? current.rank,
             ),
         );
-        notifyListeners();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          notifyListeners();
+        });
       }
     });
 
@@ -267,7 +284,9 @@ class MultiplayerGameProvider with ChangeNotifier {
           isGameEnded: true,
           finalRanking: ranking,
         );
-        notifyListeners();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          notifyListeners();
+        });
       }
     });
   }
@@ -323,7 +342,9 @@ class MultiplayerGameProvider with ChangeNotifier {
   void consumeAttackLines(int lines) {
     if (_incomingAttackLines >= lines) {
       _incomingAttackLines -= lines;
-      notifyListeners();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        notifyListeners();
+      });
     }
   }
 

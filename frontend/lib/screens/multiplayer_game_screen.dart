@@ -559,14 +559,22 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
   }
 
   Widget _buildOpponentCard(PlayerGameState opponent) {
-    // 디버그: 보드 상태 확인
-    if (opponent.board != null) {
-      print(
+    // 디버그: 보드 상태 상세 확인
+    if (opponent.board != null && opponent.board!.isNotEmpty) {
+      debugPrint(
         '🎨 렌더링: ${opponent.nickname} 보드 크기 ${opponent.board!.length}x${opponent.board![0].length}',
       );
+      
+      // 보드 내용 샘플 출력 (첫 3줄)
+      for (int i = 0; i < 3 && i < opponent.board!.length; i++) {
+        debugPrint('   행 $i: ${opponent.board![i]}');
+      }
     } else {
-      print('⚠️ ${opponent.nickname} 보드 없음');
+      debugPrint('⚠️ ${opponent.nickname} 보드 없음 (null=${opponent.board == null}, empty=${opponent.board?.isEmpty})');
     }
+
+    // 보드가 있는지 확인
+    final hasBoard = opponent.board != null && opponent.board!.isNotEmpty;
 
     return Container(
       decoration: BoxDecoration(
@@ -574,8 +582,8 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: opponent.isAlive
-              ? Colors.green.withOpacity(0.5)
-              : Colors.red.withOpacity(0.5),
+              ? Colors.green.withValues(alpha: 0.5)
+              : Colors.red.withValues(alpha: 0.5),
           width: 2,
         ),
       ),
@@ -603,6 +611,19 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
+              // 디버그 표시
+              if (hasBoard)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                  child: const Text(
+                    '🎮',
+                    style: TextStyle(fontSize: 10),
+                  ),
+                ),
             ],
           ),
           if (!opponent.isAlive && opponent.rank > 0) ...[
@@ -610,7 +631,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: Colors.amber.withOpacity(0.2),
+                color: Colors.amber.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
@@ -625,44 +646,41 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
           ],
           const SizedBox(height: 8),
 
-          // 미니 보드 (있으면 표시)
-          if (opponent.board != null && opponent.board!.isNotEmpty)
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.black,
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: Colors.grey[700]!),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: _buildMiniBoard(opponent.board!),
-                ),
-              ),
-            )
-          else
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.grey[800],
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(color: Colors.grey[700]!),
-                ),
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.grid_4x4, color: Colors.grey[600], size: 20),
-                      const SizedBox(height: 4),
-                      Text(
-                        '대기 중...',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 10),
+          // 미니 보드
+          Expanded(
+            child: hasBoard
+                ? Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black,
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: Colors.green, width: 1), // 초록색으로 변경하여 확인
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: _buildMiniBoard(opponent.board!),
+                    ),
+                  )
+                : Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey[800],
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: Colors.grey[700]!),
+                    ),
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.grid_4x4, color: Colors.grey[600], size: 20),
+                          const SizedBox(height: 4),
+                          Text(
+                            '대기 중...',
+                            style: TextStyle(color: Colors.grey[600], fontSize: 10),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              ),
-            ),
+          ),
 
           const SizedBox(height: 8),
           // 게임 정보
@@ -680,7 +698,13 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
 
   // 미니 보드 위젯
   Widget _buildMiniBoard(List<List<int>> board) {
-    return CustomPaint(painter: _MiniBoardPainter(board));
+    debugPrint('🖌️ _buildMiniBoard 호출: ${board.length}x${board.isNotEmpty ? board[0].length : 0}');
+    return CustomPaint(
+      painter: _MiniBoardPainter(board),
+      size: const Size(double.infinity, double.infinity),
+      isComplex: true,
+      willChange: false,
+    );
   }
 
   Widget _buildStatRow(IconData icon, String label, String value) {
@@ -807,13 +831,22 @@ class _MiniBoardPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    debugPrint('🎨 _MiniBoardPainter.paint 호출: size=$size, board=${board.length}x${board.isNotEmpty ? board[0].length : 0}');
+    
+    if (board.isEmpty) {
+      debugPrint('⚠️ 보드가 비어있음');
+      return;
+    }
+
     final rows = board.length;
-    final cols = board.isNotEmpty ? board[0].length : 10;
+    final cols = board[0].length;
 
     final cellWidth = size.width / cols;
     final cellHeight = size.height / rows;
 
-    // 배경 그리기 (디버그용)
+    debugPrint('📐 셀 크기: $cellWidth x $cellHeight');
+
+    // 배경 그리기
     final bgPaint = Paint()..color = Colors.grey[900]!;
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), bgPaint);
 
@@ -829,15 +862,11 @@ class _MiniBoardPainter extends CustomPainter {
       Colors.orange, // 7: L
     ];
 
+    int blockCount = 0;
+
     for (int y = 0; y < rows; y++) {
       for (int x = 0; x < cols; x++) {
         final cellValue = board[y][x];
-
-        // 격자 그리기
-        final gridPaint = Paint()
-          ..color = Colors.grey[800]!
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 0.3;
 
         final cellRect = Rect.fromLTWH(
           x * cellWidth,
@@ -845,10 +874,18 @@ class _MiniBoardPainter extends CustomPainter {
           cellWidth,
           cellHeight,
         );
+
+        // 격자 그리기
+        final gridPaint = Paint()
+          ..color = Colors.grey[700]!
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 0.5;
         canvas.drawRect(cellRect, gridPaint);
 
         // 블록 그리기
         if (cellValue > 0 && cellValue < colors.length) {
+          blockCount++;
+          
           final paint = Paint()
             ..color = colors[cellValue]
             ..style = PaintingStyle.fill;
@@ -857,24 +894,35 @@ class _MiniBoardPainter extends CustomPainter {
 
           // 블록 테두리
           final borderPaint = Paint()
-            ..color = Colors.white.withOpacity(0.3)
+            ..color = Colors.white.withValues(alpha: 0.3)
             ..style = PaintingStyle.stroke
-            ..strokeWidth = 0.8;
+            ..strokeWidth = 1.0;
           canvas.drawRect(cellRect, borderPaint);
         }
       }
     }
+
+    debugPrint('✅ 그리기 완료: 블록 $blockCount개 렌더링됨');
   }
 
   @override
   bool shouldRepaint(_MiniBoardPainter oldDelegate) {
     // 보드 내용이 실제로 변경되었을 때만 다시 그리기
-    if (board.length != oldDelegate.board.length) return true;
+    if (board.length != oldDelegate.board.length) {
+      debugPrint('🔄 보드 행 수 변경: ${oldDelegate.board.length} -> ${board.length}');
+      return true;
+    }
 
     for (int i = 0; i < board.length; i++) {
-      if (board[i].length != oldDelegate.board[i].length) return true;
+      if (board[i].length != oldDelegate.board[i].length) {
+        debugPrint('🔄 보드 열 수 변경');
+        return true;
+      }
       for (int j = 0; j < board[i].length; j++) {
-        if (board[i][j] != oldDelegate.board[i][j]) return true;
+        if (board[i][j] != oldDelegate.board[i][j]) {
+          debugPrint('🔄 보드 내용 변경: [$i][$j] ${oldDelegate.board[i][j]} -> ${board[i][j]}');
+          return true;
+        }
       }
     }
 
