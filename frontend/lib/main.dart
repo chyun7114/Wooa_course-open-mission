@@ -4,8 +4,10 @@ import 'providers/game_provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/room_provider.dart';
 import 'providers/room_waiting_provider.dart';
+import 'providers/multiplayer_game_provider.dart';
 import 'screens/login_screen.dart';
 import 'core/services/auth_storage_service.dart';
+import 'core/network/websocket_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,6 +29,9 @@ class TetrisApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => RoomProvider()),
         ChangeNotifierProvider(create: (_) => RoomWaitingProvider()),
+        ChangeNotifierProvider(
+          create: (_) => MultiplayerGameProvider(WebSocketService()),
+        ),
       ],
       child: MaterialApp(
         title: 'Tetris',

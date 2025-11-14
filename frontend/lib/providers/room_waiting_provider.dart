@@ -92,8 +92,13 @@ class RoomWaitingProvider extends ChangeNotifier {
   // 게임 시작 처리
   void _handleGameStarted(dynamic data) {
     addSystemMessage('게임이 시작됩니다!');
-    // TODO: 게임 화면으로 전환
+    _isGameStarted = true;
+    notifyListeners();
   }
+
+  // 게임 시작 플래그
+  bool _isGameStarted = false;
+  bool get isGameStarted => _isGameStarted;
 
   void _handleChatMessage(dynamic data) {
     final message = ChatMessage(
