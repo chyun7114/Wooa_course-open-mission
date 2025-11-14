@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:frontend/core/models/room_model.dart';
 import 'package:frontend/providers/room_waiting_provider.dart';
-import 'package:frontend/screens/room_waiting_screen.dart';
+import 'package:frontend/screens/room/room_waiting_screen.dart';
 
 void main() {
   group('RoomWaitingScreen Widget Tests', () {

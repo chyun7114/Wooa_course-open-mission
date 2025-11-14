@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/room_provider.dart';
-import '../core/models/room_model.dart';
-import '../widgets/room/room_card.dart';
-import '../widgets/room/room_search_bar.dart';
-import '../widgets/room/empty_room_view.dart';
-import '../widgets/room/create_room_dialog.dart';
+import '../../providers/room_provider.dart';
+import '../../core/models/room_model.dart';
+import '../../widgets/room/room_card.dart';
+import '../../widgets/room/room_search_bar.dart';
+import '../../widgets/room/empty_room_view.dart';
+import '../../widgets/room/create_room_dialog.dart';
 import 'room_waiting_screen.dart';
 
 class RoomListScreen extends StatefulWidget {
