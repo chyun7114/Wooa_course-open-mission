@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/room_waiting_provider.dart';
-import '../core/models/room_model.dart';
-import '../core/models/game_member.dart';
-import '../widgets/waiting_room/player_card.dart';
-import '../widgets/waiting_room/chat_panel.dart';
-import '../widgets/waiting_room/ready_button.dart';
-import '../widgets/waiting_room/start_game_button.dart';
-import 'multiplayer_game_screen.dart';
+import '../../providers/room_waiting_provider.dart';
+import '../../core/models/room_model.dart';
+import '../../core/models/game_member.dart';
+import '../../widgets/waiting_room/player_card.dart';
+import '../../widgets/waiting_room/chat_panel.dart';
+import '../../widgets/waiting_room/ready_button.dart';
+import '../../widgets/waiting_room/start_game_button.dart';
+import '../game/multiplayer_game_screen.dart';
 
 class RoomWaitingScreen extends StatefulWidget {
   final RoomModel room;

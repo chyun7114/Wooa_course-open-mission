@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'game_screen.dart';
-import 'room_list_screen.dart';
+import 'game/game_screen.dart';
+import 'room/room_list_screen.dart';
 import '../widgets/game_mode/mode_selection_card.dart';
 
 class GameModeScreen extends StatelessWidget {

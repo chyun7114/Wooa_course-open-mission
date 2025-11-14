@@ -5,7 +5,7 @@ import 'providers/auth_provider.dart';
 import 'providers/room_provider.dart';
 import 'providers/room_waiting_provider.dart';
 import 'providers/multiplayer_game_provider.dart';
-import 'screens/login_screen.dart';
+import 'screens/auth/login_screen.dart';
 import 'core/services/auth_storage_service.dart';
 import 'core/network/websocket_service.dart';
 
