@@ -28,8 +28,38 @@ class _RoomWaitingScreenState extends State<RoomWaitingScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<RoomWaitingProvider>().joinRoom(widget.room, widget.userId);
+      final provider = context.read<RoomWaitingProvider>();
+      provider.joinRoom(widget.room, widget.userId);
+
+      // 게임 시작 리스너
+      provider.addListener(_onProviderChanged);
     });
+  }
+
+  @override
+  void dispose() {
+    context.read<RoomWaitingProvider>().removeListener(_onProviderChanged);
+    super.dispose();
+  }
+
+  void _onProviderChanged() {
+    final provider = context.read<RoomWaitingProvider>();
+    if (provider.isGameStarted && mounted) {
+      // 게임 화면으로 전환
+      final players = provider.members
+          .map((m) => {'id': m.id, 'nickname': m.username})
+          .toList();
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => MultiplayerGameScreen(
+            roomId: widget.room.id,
+            myPlayerId: widget.userId,
+            players: players,
+          ),
+        ),
+      );
+    }
   }
 
   @override
@@ -214,13 +244,16 @@ class _RoomWaitingScreenState extends State<RoomWaitingScreen> {
 
     if (mounted && success) {
       // 멀티플레이 게임 화면으로 이동
-      final playerIds = provider.members.map((m) => m.id).toList();
+      final players = provider.members
+          .map((m) => {'id': m.id, 'nickname': m.username})
+          .toList();
 
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (context) => MultiplayerGameScreen(
             roomId: widget.room.id,
-            playerIds: playerIds,
+            myPlayerId: widget.userId,
+            players: players,
           ),
         ),
       );
