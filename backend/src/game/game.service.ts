@@ -40,7 +40,7 @@ export class GameService {
             return false;
         }
 
-        return game.updatePlayerState(playerId, score, level, linesCleared);
+        return game.updatePlayerState(playerId, score, level, linesCleared, board);
     }
 
     // 공격 처리 (줄 제거 시)
