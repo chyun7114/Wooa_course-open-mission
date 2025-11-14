@@ -59,6 +59,7 @@ export class GameState {
         score: number,
         level: number,
         linesCleared: number,
+        board?: number[][],
     ): boolean {
         const player = this.players.get(playerId);
         if (!player || !player.isAlive) {
@@ -68,6 +69,11 @@ export class GameState {
         player.score = score;
         player.level = level;
         player.linesCleared = linesCleared;
+        
+        // 보드 데이터가 있으면 저장
+        if (board) {
+            player.board = board;
+        }
 
         return true;
     }
