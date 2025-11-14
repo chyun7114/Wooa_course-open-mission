@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import '../providers/game_provider.dart';
-import '../providers/multiplayer_game_provider.dart';
-import '../widgets/game/board_widget.dart';
-import '../widgets/multiplayer/mini_block_preview.dart';
-import '../widgets/multiplayer/mini_game_info.dart';
+import '../../providers/game_provider.dart';
+import '../../providers/multiplayer_game_provider.dart';
+import '../../widgets/game/board_widget.dart';
+import '../../widgets/multiplayer/mini_block_preview.dart';
+import '../../widgets/multiplayer/mini_game_info.dart';
 
 // UI 상수
 class _UIConstants {
@@ -647,7 +647,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
           const SizedBox(height: 8),
 
           // 미니 보드
-          Expanded(
+          Flexible(
             child: hasBoard
                 ? Container(
                     decoration: BoxDecoration(

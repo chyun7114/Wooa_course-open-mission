@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/game_provider.dart';
-import '../widgets/game/board_widget.dart';
-import '../widgets/game/next_block_widget.dart';
-import '../widgets/game/hold_block_widget.dart';
-import '../widgets/game/game_info_widget.dart';
-import '../widgets/game/controls_guide_widget.dart';
-import '../widgets/game/game_controls_widget.dart';
+import '../../providers/game_provider.dart';
+import '../../widgets/game/board_widget.dart';
+import '../../widgets/game/next_block_widget.dart';
+import '../../widgets/game/hold_block_widget.dart';
+import '../../widgets/game/game_info_widget.dart';
+import '../../widgets/game/controls_guide_widget.dart';
+import '../../widgets/game/game_controls_widget.dart';
 
 class GameScreen extends StatelessWidget {
   const GameScreen({super.key});
