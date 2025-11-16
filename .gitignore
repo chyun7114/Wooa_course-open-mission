@@ -18,3 +18,5 @@ logs/
 
 # Dependencies
 node_modules/
+
+./github/instructions/flutter-nestjs_ruleset.md.instructions.md

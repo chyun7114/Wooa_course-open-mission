@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { RoomController } from './room.controller';
 import { RoomService } from './room.service';
 import { RoomGateway } from './room.gateway';
@@ -22,7 +22,7 @@ import { GameModule } from '../game/game.module';
             }),
             inject: [ConfigService],
         }),
-        GameModule,
+        forwardRef(() => GameModule),
     ],
     controllers: [RoomController],
     providers: [RoomService, RoomGateway, JwtStrategy],

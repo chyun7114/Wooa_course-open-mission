@@ -9,7 +9,6 @@ import '../../providers/game_provider.dart';
 import '../../providers/multiplayer_game_provider.dart';
 import '../../widgets/multiplayer/my_game_area.dart';
 import '../../widgets/multiplayer/opponents_area.dart';
-import '../../widgets/multiplayer/game_over_overlay.dart';
 
 class MultiplayerGameScreen extends StatefulWidget {
   final String roomId;
@@ -158,9 +157,45 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
                   ),
                   if (gameProvider.gameState == GameState.gameOver &&
                       !(multiProvider.gameState?.isGameEnded ?? false))
-                    GameOverOverlay(
-                      score: gameProvider.score,
-                      level: gameProvider.level,
+                    Container(
+                      color: Colors.black.withOpacity(0.7),
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.close,
+                              color: Colors.red,
+                              size: 80,
+                            ),
+                            const SizedBox(height: 16),
+                            const Text(
+                              'GAME OVER',
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontSize: 48,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              '점수: ${gameProvider.score}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                              ),
+                            ),
+                            const SizedBox(height: 32),
+                            const Text(
+                              '다른 플레이어의 게임이 진행 중입니다...',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 18,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                 ],
               ),
