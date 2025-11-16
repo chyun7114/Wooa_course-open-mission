@@ -8,6 +8,7 @@ import {
 import { UseGuards, Logger, UseInterceptors } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { GameService } from './game.service';
+import { RoomService } from '../room/room.service';
 import { WsJwtGuard } from '../common/guards/ws-jwt.guard';
 import { WsUser } from '../common/decorators/ws-user.decorator';
 import { AuthUser } from '../common/decorators/get-user.decorator';
@@ -27,7 +28,10 @@ export class GameGateway {
 
     private readonly logger = new Logger(GameGateway.name);
 
-    constructor(private readonly gameService: GameService) {}
+    constructor(
+        private readonly gameService: GameService,
+        private readonly roomService: RoomService,
+    ) {}
 
     // 게임 상태 업데이트 (점수, 레벨, 줄 제거 수)
     @SubscribeMessage('updateGameState')
@@ -136,6 +140,22 @@ export class GameGateway {
             this.server.to(data.roomId).emit('gameEnded', {
                 finalRanking: result.finalRanking,
             });
+
+            // 게임 종료 후 방 상태 초기화
+            const room = this.roomService.findRoom(data.roomId);
+            if (room) {
+                room.endGame();
+                this.logger.log(`Room ${data.roomId} game ended, state reset`);
+                
+                this.roomService.deleteRoom(data.roomId);
+
+                // 방 목록 업데이트 브로드캐스트
+                this.server.emit('roomListUpdated', {
+                    rooms: this.roomService
+                        .findAllRooms()
+                        .map((r) => r.toResponse()),
+                });
+            }
 
             this.logger.log(`Game ended for room ${data.roomId}`);
         }

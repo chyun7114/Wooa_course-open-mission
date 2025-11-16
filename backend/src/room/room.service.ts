@@ -181,4 +181,12 @@ export class RoomService {
             0,
         );
     }
+
+    deleteRoom(roomId: string): boolean {
+        const existed = this.rooms.delete(roomId);
+        if (existed) {
+            this.logger.log(`Room ${roomId} deleted`);
+        }
+        return existed;
+    }
 }
