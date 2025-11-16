@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/network/websocket_service.dart';
+import './game_provider.dart';
 
 /// 플레이어 게임 상태
 class PlayerGameState {
@@ -98,11 +99,13 @@ class MultiplayerGameState {
 /// 멀티플레이 게임 상태 관리 Provider
 class MultiplayerGameProvider with ChangeNotifier {
   final WebSocketService _wsService;
+  final GameProvider? _gameProvider; // GameProvider 참조 추가
   MultiplayerGameState? _gameState;
   String? _myPlayerId;
   int _incomingAttackLines = 0;
 
-  MultiplayerGameProvider(this._wsService);
+  MultiplayerGameProvider(this._wsService, {GameProvider? gameProvider})
+      : _gameProvider = gameProvider;
 
   MultiplayerGameState? get gameState => _gameState;
   String? get myPlayerId => _myPlayerId;
@@ -154,7 +157,11 @@ class MultiplayerGameProvider with ChangeNotifier {
     _gameState = MultiplayerGameState(roomId: roomId, players: playerStates);
 
     _setupListeners();
-    notifyListeners();
+    
+    // notifyListeners를 다음 프레임에서 호출
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      notifyListeners();
+    });
   }
 
   /// WebSocket 리스너 설정
@@ -251,6 +258,8 @@ class MultiplayerGameProvider with ChangeNotifier {
     _wsService.on('gameEnded', (data) {
       if (data == null || _gameState == null) return;
 
+      debugPrint('🏆 게임 종료 이벤트 수신');
+
       final rankingData = data['ranking'] as List<dynamic>?;
       if (rankingData != null) {
         final ranking = rankingData
@@ -260,6 +269,13 @@ class MultiplayerGameProvider with ChangeNotifier {
           isGameEnded: true,
           finalRanking: ranking,
         );
+        
+        // GameProvider도 종료 상태로 변경
+        if (_gameProvider != null) {
+          _gameProvider.endMultiplayerGame();
+          debugPrint('🛑 GameProvider 게임 종료 처리');
+        }
+        
         WidgetsBinding.instance.addPostFrameCallback((_) {
           notifyListeners();
         });
@@ -322,6 +338,75 @@ class MultiplayerGameProvider with ChangeNotifier {
         notifyListeners();
       });
     }
+  }
+
+  /// Mock 데이터 설정 (프리뷰용)
+  void setMockData({
+    required int opponentCount,
+    bool isGameEnded = false,
+  }) {
+    final players = <String, PlayerGameState>{};
+    
+    // 내 플레이어 (1등)
+    players['player-1'] = PlayerGameState(
+      playerId: 'player-1',
+      nickname: 'You',
+      isAlive: !isGameEnded,
+      rank: isGameEnded ? 1 : 0,
+      score: 15000,
+      level: 8,
+      linesCleared: 45,
+      board: _createMockBoard(),
+    );
+
+    // 상대 플레이어들 생성
+    for (int i = 2; i <= opponentCount + 1; i++) {
+      final halfPlayers = ((opponentCount + 1) / 2).round();
+      final isAlive = isGameEnded ? false : i <= halfPlayers;
+      players['player-$i'] = PlayerGameState(
+        playerId: 'player-$i',
+        nickname: 'Player $i',
+        isAlive: isAlive,
+        rank: isGameEnded ? i : 0,
+        score: 10000 - (i * 1000),
+        level: 10 - i,
+        linesCleared: 40 - (i * 5),
+        board: _createMockBoard(),
+      );
+    }
+
+    _myPlayerId = 'player-1';
+    
+    List<PlayerGameState>? ranking;
+    if (isGameEnded) {
+      ranking = players.values.toList();
+      ranking.sort((a, b) => a.rank.compareTo(b.rank));
+    }
+    
+    _gameState = MultiplayerGameState(
+      roomId: 'preview-room',
+      players: players,
+      isGameEnded: isGameEnded,
+      finalRanking: ranking,
+    );
+
+    notifyListeners();
+  }
+
+  /// Mock 보드 생성
+  List<List<int>> _createMockBoard() {
+    final board = List.generate(20, (_) => List.filled(10, 0));
+    
+    // 하단에 랜덤하게 블록 배치
+    for (int row = 15; row < 20; row++) {
+      for (int col = 0; col < 10; col++) {
+        if ((row + col) % 3 != 0) {
+          board[row][col] = ((row + col) % 7) + 1;
+        }
+      }
+    }
+    
+    return board;
   }
 
   /// 초기화

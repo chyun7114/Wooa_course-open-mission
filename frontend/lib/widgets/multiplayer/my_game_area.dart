@@ -15,46 +15,47 @@ class MyGameArea extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<MultiplayerGameProvider>(
       builder: (context, multiProvider, child) {
-        return Container(
-          padding: const EdgeInsets.all(UIConstants.spacing),
-          decoration: BoxDecoration(
-            color: Colors.grey[900],
-            borderRadius: BorderRadius.circular(UIConstants.borderRadius),
-            border: Border.all(
-              color: Colors.blue,
-              width: UIConstants.borderWidth,
-            ),
-          ),
-          child: Column(
-            children: [
-              _buildHeader(),
-              if (multiProvider.incomingAttackLines > 0)
-                _buildAttackWarning(multiProvider.incomingAttackLines),
-              const SizedBox(height: UIConstants.smallSpacing),
-              Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _BlockPreviewPanel(
-                      label: 'HOLD',
-                      tetrominoGetter: (provider) => provider.holdTetromino,
-                    ),
-                    const SizedBox(width: UIConstants.smallSpacing),
-                    const Expanded(
-                      child: Center(
-                        child: AspectRatio(
-                          aspectRatio: 0.5,
-                          child: _GameBoard(),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: UIConstants.smallSpacing),
-                    const _NextAndScorePanel(),
-                  ],
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            return Container(
+              height: constraints.maxHeight,
+              padding: const EdgeInsets.all(UIConstants.spacing),
+              decoration: BoxDecoration(
+                color: Colors.grey[900],
+                borderRadius: BorderRadius.circular(UIConstants.borderRadius),
+                border: Border.all(
+                  color: Colors.blue,
+                  width: UIConstants.borderWidth,
                 ),
               ),
-            ],
-          ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildHeader(),
+                  if (multiProvider.incomingAttackLines > 0)
+                    _buildAttackWarning(multiProvider.incomingAttackLines),
+                  const SizedBox(height: UIConstants.smallSpacing),
+                  Expanded(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _BlockPreviewPanel(
+                          label: 'HOLD',
+                          tetrominoGetter: (provider) => provider.holdTetromino,
+                        ),
+                        const SizedBox(width: UIConstants.smallSpacing),
+                        const Expanded(
+                          child: _GameBoard(),
+                        ),
+                        const SizedBox(width: UIConstants.smallSpacing),
+                        const _NextAndScorePanel(),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
         );
       },
     );
@@ -120,8 +121,11 @@ class _BlockPreviewPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: UIConstants.previewSize,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(
+        maxWidth: UIConstants.previewSize,
+        minWidth: 60,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -183,15 +187,18 @@ class _NextAndScorePanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: UIConstants.previewSize,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(
+        maxWidth: UIConstants.previewSize,
+        minWidth: 60,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          _buildNextPreview(),
-          const SizedBox(height: UIConstants.largeSpacing),
-          _buildScoreInfo(),
+          Flexible(child: _buildNextPreview()),
+          const SizedBox(height: UIConstants.smallSpacing),
+          Flexible(child: _buildScoreInfo()),
         ],
       ),
     );
