@@ -46,24 +46,35 @@ class BoardWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final grid = _getMergedGrid();
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.grey[900],
-        border: Border.all(color: Colors.white, width: 2),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: List.generate(
-          board.height,
-          (y) => Row(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // border를 고려하여 셀 크기 계산 (각 셀의 border width를 고려)
+        final availableWidth = constraints.maxWidth - 4; // Container border 2px * 2
+        final cellSize = (availableWidth / board.width).floorToDouble();
+        
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.grey[900],
+            border: Border.all(color: Colors.white, width: 2),
+          ),
+          child: Column(
             mainAxisSize: MainAxisSize.min,
             children: List.generate(
-              board.width,
-              (x) => CellWidget(value: grid[y][x]),
+              board.height,
+              (y) => Row(
+                mainAxisSize: MainAxisSize.min,
+                children: List.generate(
+                  board.width,
+                  (x) => CellWidget(
+                    value: grid[y][x],
+                    size: cellSize,
+                  ),
+                ),
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

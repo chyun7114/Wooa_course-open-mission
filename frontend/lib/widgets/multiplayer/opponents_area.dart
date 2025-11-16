@@ -33,24 +33,30 @@ class OpponentsArea extends StatelessWidget {
             .where((p) => p.playerId != myPlayerId)
             .toList();
 
-        return Container(
-          padding: const EdgeInsets.all(UIConstants.spacing),
-          decoration: BoxDecoration(
-            color: Colors.grey[900],
-            borderRadius: BorderRadius.circular(UIConstants.borderRadius),
-            border: Border.all(color: Colors.grey[700]!, width: 2),
-          ),
-          child: Column(
-            children: [
-              _buildHeader(opponents.length),
-              const SizedBox(height: UIConstants.spacing),
-              Expanded(
-                child: opponents.isEmpty
-                    ? _buildEmptyState()
-                    : _buildOpponentGrid(opponents),
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            return Container(
+              height: constraints.maxHeight,
+              padding: const EdgeInsets.all(UIConstants.spacing),
+              decoration: BoxDecoration(
+                color: Colors.grey[900],
+                borderRadius: BorderRadius.circular(UIConstants.borderRadius),
+                border: Border.all(color: Colors.grey[700]!, width: 2),
               ),
-            ],
-          ),
+              child: Column(
+                mainAxisSize: MainAxisSize.max,
+                children: [
+                  _buildHeader(opponents.length),
+                  const SizedBox(height: UIConstants.spacing),
+                  Expanded(
+                    child: opponents.isEmpty
+                        ? _buildEmptyState()
+                        : _buildOpponentGrid(opponents),
+                  ),
+                ],
+              ),
+            );
+          },
         );
       },
     );
@@ -80,17 +86,36 @@ class OpponentsArea extends StatelessWidget {
   }
 
   Widget _buildOpponentGrid(List<PlayerGameState> opponents) {
-    return GridView.builder(
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 0.8,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-      ),
-      itemCount: opponents.length,
-      itemBuilder: (context, index) {
-        return OpponentCard(opponent: opponents[index], myPlayerId: myPlayerId);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 화면 크기에 따라 열 개수 조정
+        int crossAxisCount;
+        if (constraints.maxWidth > 1000) {
+          crossAxisCount = 4;
+        } else if (constraints.maxWidth > 600) {
+          crossAxisCount = 3;
+        } else {
+          crossAxisCount = 2;
+        }
+        
+        return GridView.builder(
+          physics: const AlwaysScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            childAspectRatio: 0.85,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+          ),
+          itemCount: opponents.length,
+          itemBuilder: (context, index) {
+            return OpponentCard(
+              opponent: opponents[index],
+              myPlayerId: myPlayerId,
+            );
+          },
+        );
       },
     );
   }
+
 }

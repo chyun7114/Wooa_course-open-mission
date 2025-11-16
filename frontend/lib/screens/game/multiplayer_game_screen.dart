@@ -44,7 +44,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final gameProvider = context.read<GameProvider>();
-      gameProvider.startGame();
+      gameProvider.startGame(isMultiplayer: true); // 멀티플레이 모드로 시작
       gameProvider.addListener(_onGameStateChanged);
 
       // 초기 상태 전송
@@ -93,7 +93,18 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Shortcuts(
+    return Consumer2<GameProvider, MultiplayerGameProvider>(
+      builder: (context, gameProvider, multiProvider, child) {
+        // 게임 종료 시 순위 화면 표시
+        if (multiProvider.gameState?.isGameEnded == true &&
+            multiProvider.gameState?.finalRanking != null) {
+          return _buildRankingOverlay(
+            context,
+            multiProvider.gameState!.finalRanking!,
+          );
+        }
+
+        return Shortcuts(
       shortcuts: <LogicalKeySet, Intent>{
         LogicalKeySet(LogicalKeyboardKey.arrowLeft): const MoveLeftIntent(),
         LogicalKeySet(LogicalKeyboardKey.arrowRight): const MoveRightIntent(),
@@ -114,9 +125,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
         },
         child: Focus(
           autofocus: true,
-          child: Consumer<GameProvider>(
-            builder: (context, gameProvider, child) {
-              return Stack(
+          child: Stack(
                 children: [
                   Scaffold(
                     backgroundColor: Colors.black,
@@ -128,6 +137,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
                           ),
                           padding: const EdgeInsets.all(UIConstants.spacing),
                           child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const Expanded(
                                 flex: UIConstants.myGameFlex,
@@ -146,17 +156,130 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
                       ),
                     ),
                   ),
-                  if (gameProvider.gameState == GameState.gameOver)
+                  if (gameProvider.gameState == GameState.gameOver &&
+                      !(multiProvider.gameState?.isGameEnded ?? false))
                     GameOverOverlay(
                       score: gameProvider.score,
                       level: gameProvider.level,
                     ),
                 ],
-              );
-            },
+              ),
+        ),
+      ),
+    );
+      },
+    );
+  }
+
+  Widget _buildRankingOverlay(
+    BuildContext context,
+    List<PlayerGameState> ranking,
+  ) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Center(
+        child: Container(
+          padding: const EdgeInsets.all(32),
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                '🏆 최종 순위 🏆',
+                style: TextStyle(
+                  color: Colors.amber,
+                  fontSize: 36,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 32),
+              Flexible(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: ranking.length,
+                  itemBuilder: (context, index) {
+                    final player = ranking[index];
+                    final isMe = player.playerId == widget.myPlayerId;
+                    return Container(
+                      margin: const EdgeInsets.symmetric(vertical: 6),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: isMe ? Colors.blue[900] : Colors.grey[800],
+                        borderRadius: BorderRadius.circular(12),
+                        border: isMe
+                            ? Border.all(color: Colors.blue, width: 2)
+                            : null,
+                      ),
+                      child: Row(
+                        children: [
+                          Text(
+                            _getRankEmoji(player.rank),
+                            style: const TextStyle(fontSize: 28),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  player.nickname,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: isMe
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '점수: ${player.score} | Lv.${player.level} | 라인: ${player.linesCleared}',
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 32),
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  minimumSize: const Size(200, 50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                ),
+                child: const Text(
+                  '방으로 돌아가기',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
           ),
         ),
       ),
     );
+  }
+
+  String _getRankEmoji(int rank) {
+    switch (rank) {
+      case 1:
+        return '🥇';
+      case 2:
+        return '🥈';
+      case 3:
+        return '🥉';
+      default:
+        return '$rank위';
+    }
   }
 }

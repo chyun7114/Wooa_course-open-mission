@@ -29,8 +29,16 @@ class TetrisApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => RoomProvider()),
         ChangeNotifierProvider(create: (_) => RoomWaitingProvider()),
-        ChangeNotifierProvider(
-          create: (_) => MultiplayerGameProvider(WebSocketService()),
+        ChangeNotifierProxyProvider<GameProvider, MultiplayerGameProvider>(
+          create: (context) => MultiplayerGameProvider(
+            WebSocketService(),
+            gameProvider: context.read<GameProvider>(),
+          ),
+          update: (context, gameProvider, previous) =>
+              previous ?? MultiplayerGameProvider(
+                WebSocketService(),
+                gameProvider: gameProvider,
+              ),
         ),
       ],
       child: MaterialApp(

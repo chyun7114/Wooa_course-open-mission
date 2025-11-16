@@ -30,7 +30,12 @@ class GameProvider with ChangeNotifier {
   Tetromino? _holdTetromino;
   Tetromino? get holdTetromino => _holdTetromino;
 
-  bool _canHold = true;
+  bool _holdUsed = false;
+  bool _isMultiplayerMode = false;
+  bool _isGameEnded = false;
+
+  bool get isMultiplayerMode => _isMultiplayerMode;
+  bool get isGameEnded => _isGameEnded;
 
   Tetromino? get ghostTetromino {
     if (_currentTetromino == null || _gameState != GameState.playing) {
@@ -61,7 +66,9 @@ class GameProvider with ChangeNotifier {
     _engine = GameEngine(board: _board);
   }
 
-  void startGame() {
+  void startGame({bool isMultiplayer = false}) {
+    _isMultiplayerMode = isMultiplayer;
+    _isGameEnded = false;
     _board.reset();
     _scoreCalculator.reset();
     
@@ -69,7 +76,7 @@ class GameProvider with ChangeNotifier {
     _currentTetromino = _generator.getNext();
     _nextTetromino = _generator.peekNext();
     _holdTetromino = null;
-    _canHold = true;
+    _holdUsed = false;
     
     _gameState = GameState.playing;
     _startFallTimer();
@@ -125,7 +132,7 @@ class GameProvider with ChangeNotifier {
 
     _engine.lockTetromino(_currentTetromino!);
     _clearLinesAndUpdateScore();
-    _canHold = true;
+    _holdUsed = false;
     _spawnNextTetromino();
   }
 
@@ -166,8 +173,16 @@ class GameProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  // 멀티플레이 게임 종료 (순위 화면 표시용)
+  void endMultiplayerGame() {
+    _isGameEnded = true;
+    _gameState = GameState.gameOver;
+    _timer.stop();
+    notifyListeners();
+  }
+
   void moveLeft() {
-    if (_gameState != GameState.playing || _currentTetromino == null) {
+    if (_gameState != GameState.playing || _currentTetromino == null || _isGameEnded) {
       return;
     }
 
@@ -178,7 +193,7 @@ class GameProvider with ChangeNotifier {
   }
 
   void moveRight() {
-    if (_gameState != GameState.playing || _currentTetromino == null) {
+    if (_gameState != GameState.playing || _currentTetromino == null || _isGameEnded) {
       return;
     }
 
@@ -189,7 +204,7 @@ class GameProvider with ChangeNotifier {
   }
 
   void moveDown() {
-    if (_gameState != GameState.playing || _currentTetromino == null) {
+    if (_gameState != GameState.playing || _currentTetromino == null || _isGameEnded) {
       return;
     }
 
@@ -201,7 +216,7 @@ class GameProvider with ChangeNotifier {
   }
 
   void hardDrop() {
-    if (_gameState != GameState.playing || _currentTetromino == null) {
+    if (_gameState != GameState.playing || _currentTetromino == null || _isGameEnded) {
       return;
     }
 
@@ -217,7 +232,7 @@ class GameProvider with ChangeNotifier {
   }
 
   void rotate() {
-    if (_gameState != GameState.playing || _currentTetromino == null) {
+    if (_gameState != GameState.playing || _currentTetromino == null || _isGameEnded) {
       return;
     }
 
@@ -257,7 +272,7 @@ class GameProvider with ChangeNotifier {
   }
 
   void hold() {
-    if (_gameState != GameState.playing || _currentTetromino == null || !_canHold) {
+    if (_gameState != GameState.playing || _currentTetromino == null || _holdUsed || _isGameEnded) {
       return;
     }
 
@@ -276,7 +291,7 @@ class GameProvider with ChangeNotifier {
       return;
     }
 
-    _canHold = false;
+    _holdUsed = true;
     notifyListeners();
   }
 
