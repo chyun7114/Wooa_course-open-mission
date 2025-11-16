@@ -1,6 +1,7 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { GameService } from './game.service';
 import { GameGateway } from './game.gateway';
+import { RoomModule } from '../room/room.module';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from '../common/strategies/jwt.strategy';
@@ -9,6 +10,7 @@ import { PassportModule } from '@nestjs/passport';
 @Module({
     imports: [
         PassportModule,
+        forwardRef(() => RoomModule),
         JwtModule.registerAsync({
             imports: [ConfigModule],
             useFactory: (configService: ConfigService) => ({

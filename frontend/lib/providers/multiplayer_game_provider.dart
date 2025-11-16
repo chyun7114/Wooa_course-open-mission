@@ -258,13 +258,16 @@ class MultiplayerGameProvider with ChangeNotifier {
     _wsService.on('gameEnded', (data) {
       if (data == null || _gameState == null) return;
 
-      debugPrint('🏆 게임 종료 이벤트 수신');
+      debugPrint('🏆 게임 종료 이벤트 수신: $data');
 
-      final rankingData = data['ranking'] as List<dynamic>?;
+      final rankingData = data['finalRanking'] as List<dynamic>?;
       if (rankingData != null) {
         final ranking = rankingData
             .map((r) => PlayerGameState.fromJson(r as Map<String, dynamic>))
             .toList();
+        
+        debugPrint('🏆 최종 순위 ${ranking.length}명');
+        
         _gameState = _gameState!.copyWith(
           isGameEnded: true,
           finalRanking: ranking,
