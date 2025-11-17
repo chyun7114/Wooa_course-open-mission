@@ -5,6 +5,7 @@ import 'providers/auth_provider.dart';
 import 'providers/room_provider.dart';
 import 'providers/room_waiting_provider.dart';
 import 'providers/multiplayer_game_provider.dart';
+import 'providers/ranking_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'core/services/auth_storage_service.dart';
 import 'core/network/websocket_service.dart';
@@ -29,13 +30,15 @@ class TetrisApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => RoomProvider()),
         ChangeNotifierProvider(create: (_) => RoomWaitingProvider()),
+        ChangeNotifierProvider(create: (_) => RankingProvider()),
         ChangeNotifierProxyProvider<GameProvider, MultiplayerGameProvider>(
           create: (context) => MultiplayerGameProvider(
             WebSocketService(),
             gameProvider: context.read<GameProvider>(),
           ),
           update: (context, gameProvider, previous) =>
-              previous ?? MultiplayerGameProvider(
+              previous ??
+              MultiplayerGameProvider(
                 WebSocketService(),
                 gameProvider: gameProvider,
               ),

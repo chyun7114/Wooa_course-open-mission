@@ -1,25 +1,51 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/game_provider.dart';
+import '../../providers/ranking_provider.dart';
 import '../../widgets/game/board_widget.dart';
 import '../../widgets/game/next_block_widget.dart';
 import '../../widgets/game/hold_block_widget.dart';
 import '../../widgets/game/game_info_widget.dart';
 import '../../widgets/game/controls_guide_widget.dart';
 import '../../widgets/game/game_controls_widget.dart';
+import '../../widgets/game/ranking_panel_widget.dart';
+import '../game_mode_screen.dart';
 
-class GameScreen extends StatelessWidget {
+class GameScreen extends StatefulWidget {
   const GameScreen({super.key});
+
+  @override
+  State<GameScreen> createState() => _GameScreenState();
+}
+
+class _GameScreenState extends State<GameScreen> {
+  bool _rankingSubmitted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final rankingProvider = context.read<RankingProvider>();
+      rankingProvider.fetchMyRanking();
+      rankingProvider.fetchTopRankings();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Consumer<GameProvider>(
-        builder: (context, gameProvider, child) {
+      body: Consumer2<GameProvider, RankingProvider>(
+        builder: (context, gameProvider, rankingProvider, child) {
+          if (gameProvider.gameState == GameState.gameOver &&
+              !_rankingSubmitted &&
+              gameProvider.score > 0) {
+            _submitRanking(gameProvider.score);
+          }
+
           return Stack(
             children: [
-              _buildGameContent(context, gameProvider),
+              _buildGameContent(context, gameProvider, rankingProvider),
               GameControlsWidget(
                 onMoveLeft: gameProvider.moveLeft,
                 onMoveRight: gameProvider.moveRight,
@@ -53,7 +79,17 @@ class GameScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildGameContent(BuildContext context, GameProvider gameProvider) {
+  void _submitRanking(int score) {
+    _rankingSubmitted = true;
+    final rankingProvider = context.read<RankingProvider>();
+    rankingProvider.submitScore(score);
+  }
+
+  Widget _buildGameContent(
+    BuildContext context,
+    GameProvider gameProvider,
+    RankingProvider rankingProvider,
+  ) {
     return Center(
       child: SingleChildScrollView(
         child: Padding(
@@ -89,9 +125,12 @@ class GameScreen extends StatelessWidget {
                     score: gameProvider.score,
                     level: gameProvider.level,
                     lines: gameProvider.totalLines,
+                    bestScore: rankingProvider.myRanking?.score,
                   ),
                 ],
               ),
+              const SizedBox(width: 40),
+              const RankingPanelWidget(),
             ],
           ),
         ),
@@ -117,8 +156,14 @@ class GameScreen extends StatelessWidget {
       onTap: gameProvider.resumeGame,
       showResumeButton: true,
       showRestartButton: true,
+      showMenuButton: true,
       onResume: gameProvider.resumeGame,
       onRestart: gameProvider.restartGame,
+      onMenu: () {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const GameModeScreen()),
+        );
+      },
     );
   }
 
@@ -130,9 +175,21 @@ class GameScreen extends StatelessWidget {
       context,
       title: 'GAME OVER',
       message: 'Score: ${gameProvider.score}',
-      onTap: gameProvider.restartGame,
+      onTap: () {
+        _rankingSubmitted = false; // 재시작 시 초기화
+        gameProvider.restartGame();
+      },
       showRestartButton: true,
-      onRestart: gameProvider.restartGame,
+      showMenuButton: true,
+      onRestart: () {
+        _rankingSubmitted = false; // 재시작 시 초기화
+        gameProvider.restartGame();
+      },
+      onMenu: () {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const GameModeScreen()),
+        );
+      },
     );
   }
 
@@ -143,8 +200,10 @@ class GameScreen extends StatelessWidget {
     required VoidCallback onTap,
     bool showResumeButton = false,
     bool showRestartButton = false,
+    bool showMenuButton = false,
     VoidCallback? onResume,
     VoidCallback? onRestart,
+    VoidCallback? onMenu,
   }) {
     return Container(
       color: Colors.black87,
@@ -198,6 +257,23 @@ class GameScreen extends StatelessWidget {
                     ),
                     child: const Text(
                       'RESTART GAME',
+                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                  ),
+                if (showMenuButton && showRestartButton)
+                  const SizedBox(width: 20),
+                if (showMenuButton)
+                  ElevatedButton(
+                    onPressed: onMenu,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.grey[700],
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 40,
+                        vertical: 20,
+                      ),
+                    ),
+                    child: const Text(
+                      'MENU',
                       style: TextStyle(color: Colors.white, fontSize: 16),
                     ),
                   ),

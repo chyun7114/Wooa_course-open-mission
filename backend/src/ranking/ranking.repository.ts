@@ -33,18 +33,28 @@ export class RankingRepository {
         if (existing.length > 0) {
             return await this.db
                 .update(Ranking)
-                .set({ score })
+                .set({
+                    score,
+                    updatedAt: new Date(),
+                })
                 .where(eq(Ranking.memberId, memberId))
                 .returning();
         } else {
-            return await this.db.insert(Ranking).values({ memberId, score });
+            return await this.db
+                .insert(Ranking)
+                .values({ memberId, score })
+                .returning();
         }
     }
 
     async findTopRankings(limit: number = 10) {
         return await this.db
-            .select()
+            .select({
+                nickname: schema.Member.username,
+                score: Ranking.score,
+            })
             .from(Ranking)
+            .innerJoin(schema.Member, eq(Ranking.memberId, schema.Member.id))
             .orderBy(desc(Ranking.score))
             .limit(limit);
     }
