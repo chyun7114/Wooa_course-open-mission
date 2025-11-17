@@ -44,9 +44,7 @@ class MyGameArea extends StatelessWidget {
                           tetrominoGetter: (provider) => provider.holdTetromino,
                         ),
                         const SizedBox(width: UIConstants.smallSpacing),
-                        const Expanded(
-                          child: _GameBoard(),
-                        ),
+                        const Expanded(child: _GameBoard()),
                         const SizedBox(width: UIConstants.smallSpacing),
                         const _NextAndScorePanel(),
                       ],
@@ -87,7 +85,7 @@ class MyGameArea extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.red.withOpacity(0.8),
+        color: Colors.red.withValues(alpha: 0.8),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -109,7 +107,6 @@ class MyGameArea extends StatelessWidget {
   }
 }
 
-/// 블록 미리보기 패널 (HOLD/NEXT 공통)
 class _BlockPreviewPanel extends StatelessWidget {
   final String label;
   final dynamic Function(GameProvider) tetrominoGetter;
