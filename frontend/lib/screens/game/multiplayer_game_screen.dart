@@ -29,10 +29,13 @@ class MultiplayerGameScreen extends StatefulWidget {
 class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
   late MultiplayerGameProvider _multiplayerProvider;
   final GameStateTracker _stateTracker = GameStateTracker();
+  bool _isDisposed = false;
 
   @override
   void initState() {
     super.initState();
+
+    debugPrint('🎮 MultiplayerGameScreen initState');
 
     _multiplayerProvider = context.read<MultiplayerGameProvider>();
     _multiplayerProvider.initGame(
@@ -42,11 +45,17 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
       final gameProvider = context.read<GameProvider>();
-      gameProvider.startGame(isMultiplayer: true); // 멀티플레이 모드로 시작
       gameProvider.addListener(_onGameStateChanged);
 
-      // 초기 상태 전송
+      // 멀티플레이 게임 시작
+      // (RoomWaitingScreen에서 gameStarted 이벤트를 받고 이 화면으로 전환됨)
+      debugPrint('🎮 Starting multiplayer game');
+      gameProvider.startGame(isMultiplayer: true);
+
+      // 초기 게임 상태 전송
       _multiplayerProvider.updateGameState(
         score: gameProvider.score,
         level: gameProvider.level,
@@ -58,12 +67,30 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
 
   @override
   void dispose() {
-    context.read<GameProvider>().removeListener(_onGameStateChanged);
+    _isDisposed = true;
+
+    try {
+      final gameProvider = context.read<GameProvider>();
+      gameProvider.removeListener(_onGameStateChanged);
+
+      // 게임 타이머 정리
+      if (gameProvider.gameState == GameState.playing) {
+        gameProvider.pauseGame();
+      }
+    } catch (e) {
+      // Context가 이미 dispose된 경우 무시
+    }
+
+    // 상태 트래커 초기화
+    _stateTracker.reset();
+
     super.dispose();
   }
 
   /// 게임 상태 변화 감지하여 멀티플레이 서버로 전송
   void _onGameStateChanged() {
+    if (_isDisposed || !mounted) return;
+
     final gameProvider = context.read<GameProvider>();
 
     // GameStateTracker로 변경 감지
@@ -104,27 +131,28 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
         }
 
         return Shortcuts(
-      shortcuts: <LogicalKeySet, Intent>{
-        LogicalKeySet(LogicalKeyboardKey.arrowLeft): const MoveLeftIntent(),
-        LogicalKeySet(LogicalKeyboardKey.arrowRight): const MoveRightIntent(),
-        LogicalKeySet(LogicalKeyboardKey.arrowDown): const MoveDownIntent(),
-        LogicalKeySet(LogicalKeyboardKey.arrowUp): const RotateIntent(),
-        LogicalKeySet(LogicalKeyboardKey.space): const HardDropIntent(),
-        LogicalKeySet(LogicalKeyboardKey.keyC): const HoldIntent(),
-        LogicalKeySet(LogicalKeyboardKey.shiftLeft): const HoldIntent(),
-      },
-      child: Actions(
-        actions: <Type, Action<Intent>>{
-          MoveLeftIntent: MoveLeftAction(context),
-          MoveRightIntent: MoveRightAction(context),
-          MoveDownIntent: MoveDownAction(context),
-          RotateIntent: RotateAction(context),
-          HardDropIntent: HardDropAction(context),
-          HoldIntent: HoldAction(context),
-        },
-        child: Focus(
-          autofocus: true,
-          child: Stack(
+          shortcuts: <LogicalKeySet, Intent>{
+            LogicalKeySet(LogicalKeyboardKey.arrowLeft): const MoveLeftIntent(),
+            LogicalKeySet(LogicalKeyboardKey.arrowRight):
+                const MoveRightIntent(),
+            LogicalKeySet(LogicalKeyboardKey.arrowDown): const MoveDownIntent(),
+            LogicalKeySet(LogicalKeyboardKey.arrowUp): const RotateIntent(),
+            LogicalKeySet(LogicalKeyboardKey.space): const HardDropIntent(),
+            LogicalKeySet(LogicalKeyboardKey.keyC): const HoldIntent(),
+            LogicalKeySet(LogicalKeyboardKey.shiftLeft): const HoldIntent(),
+          },
+          child: Actions(
+            actions: <Type, Action<Intent>>{
+              MoveLeftIntent: MoveLeftAction(context),
+              MoveRightIntent: MoveRightAction(context),
+              MoveDownIntent: MoveDownAction(context),
+              RotateIntent: RotateAction(context),
+              HardDropIntent: HardDropAction(context),
+              HoldIntent: HoldAction(context),
+            },
+            child: Focus(
+              autofocus: true,
+              child: Stack(
                 children: [
                   Scaffold(
                     backgroundColor: Colors.black,
@@ -199,9 +227,9 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
                     ),
                 ],
               ),
-        ),
-      ),
-    );
+            ),
+          ),
+        );
       },
     );
   }
