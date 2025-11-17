@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { RankingRepository } from './ranking.repository';
+import { RankingListDto } from './dto/ranking-list.dto';
 
 @Injectable()
 export class RankingService {
@@ -9,8 +10,9 @@ export class RankingService {
         return await this.rankingRepository.upsertRanking(memberId, score);
     }
 
-    async findTopRankings(limit: number = 10) {
-        return await this.rankingRepository.findTopRankings(limit);
+    async findTopRankings(limit: number = 10): Promise<RankingListDto[]> {
+        const rows = await this.rankingRepository.findTopRankings(limit);
+        return rows.map((row) => new RankingListDto(row.nickname, row.score));
     }
 
     async findByMember(memberId: number) {

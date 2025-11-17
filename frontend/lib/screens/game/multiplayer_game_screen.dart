@@ -7,6 +7,7 @@ import 'package:frontend/core/services/game_state_tracker.dart';
 import 'package:provider/provider.dart';
 import '../../providers/game_provider.dart';
 import '../../providers/multiplayer_game_provider.dart';
+import '../../providers/room_waiting_provider.dart';
 import '../../widgets/multiplayer/my_game_area.dart';
 import '../../widgets/multiplayer/opponents_area.dart';
 
@@ -50,12 +51,8 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
       final gameProvider = context.read<GameProvider>();
       gameProvider.addListener(_onGameStateChanged);
 
-      // 멀티플레이 게임 시작
-      // (RoomWaitingScreen에서 gameStarted 이벤트를 받고 이 화면으로 전환됨)
-      debugPrint('🎮 Starting multiplayer game');
       gameProvider.startGame(isMultiplayer: true);
 
-      // 초기 게임 상태 전송
       _multiplayerProvider.updateGameState(
         score: gameProvider.score,
         level: gameProvider.level,
@@ -73,7 +70,6 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
       final gameProvider = context.read<GameProvider>();
       gameProvider.removeListener(_onGameStateChanged);
 
-      // 게임 타이머 정리
       if (gameProvider.gameState == GameState.playing) {
         gameProvider.pauseGame();
       }
@@ -87,13 +83,11 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
     super.dispose();
   }
 
-  /// 게임 상태 변화 감지하여 멀티플레이 서버로 전송
   void _onGameStateChanged() {
     if (_isDisposed || !mounted) return;
 
     final gameProvider = context.read<GameProvider>();
 
-    // GameStateTracker로 변경 감지
     if (_stateTracker.hasChanged(
       score: gameProvider.score,
       level: gameProvider.level,
@@ -313,7 +307,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
               ),
               const SizedBox(height: 32),
               ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () => _returnToRoom(context),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue,
                   minimumSize: const Size(200, 50),
@@ -344,5 +338,26 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
       default:
         return '$rank위';
     }
+  }
+
+  void _returnToRoom(BuildContext context) {
+    try {
+      final gameProvider = context.read<GameProvider>();
+      if (gameProvider.gameState == GameState.playing) {
+        gameProvider.pauseGame();
+      }
+      gameProvider.restartGame();
+    } catch (e) {
+      debugPrint('GameProvider 정리 오류: $e');
+    }
+
+    try {
+      final roomProvider = context.read<RoomWaitingProvider>();
+      roomProvider.resetGameStarted();
+    } catch (e) {
+      debugPrint('RoomWaitingProvider 없음 또는 오류: $e');
+    }
+
+    Navigator.of(context).pop();
   }
 }

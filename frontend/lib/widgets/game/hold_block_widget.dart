@@ -35,23 +35,27 @@ class HoldBlockWidget extends StatelessWidget {
   }
 
   Widget _buildPreview() {
-    if (holdTetromino == null) {
-      return const SizedBox(width: 120, height: 120);
-    }
+    final shape = holdTetromino?.shape;
 
-    final shape = holdTetromino!.shape;
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: List.generate(
-        4,
-        (row) => Row(
+    return SizedBox(
+      width: 100,
+      height: 100,
+      child: Center(
+        child: Column(
           mainAxisSize: MainAxisSize.min,
           children: List.generate(
             4,
-            (col) => CellWidget(
-              value: shape[row][col] == 1 ? holdTetromino!.colorCode : 0,
-              size: 25,
+            (row) => Row(
+              mainAxisSize: MainAxisSize.min,
+              children: List.generate(
+                4,
+                (col) => CellWidget(
+                  value: shape != null && shape[row][col] == 1
+                      ? holdTetromino!.colorCode
+                      : 0,
+                  size: 25,
+                ),
+              ),
             ),
           ),
         ),
