@@ -4,16 +4,20 @@ class GameInfoWidget extends StatelessWidget {
   final int score;
   final int level;
   final int lines;
+  final int? bestScore;
 
   const GameInfoWidget({
     super.key,
     required this.score,
     required this.level,
     required this.lines,
+    this.bestScore,
   });
 
   @override
   Widget build(BuildContext context) {
+    final displayBestScore = bestScore ?? 0;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -30,6 +34,8 @@ class GameInfoWidget extends StatelessWidget {
           _buildInfoRow('LEVEL', level.toString()),
           const SizedBox(height: 12),
           _buildInfoRow('LINES', lines.toString()),
+          const SizedBox(height: 12),
+          _buildInfoRow('BEST', displayBestScore.toString()),
         ],
       ),
     );
