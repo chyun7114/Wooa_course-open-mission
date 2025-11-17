@@ -8,7 +8,7 @@ import { desc, eq } from 'drizzle-orm';
 type DrizzleDB = ReturnType<typeof drizzle<typeof schema>>;
 
 @Injectable()
-export class MemberRepository {
+export class RankingRepository {
     constructor(
         @Inject(DRIZZLE_ORM)
         private readonly db: DrizzleDB,

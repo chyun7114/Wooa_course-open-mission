@@ -20,6 +20,26 @@ class GameScreen extends StatelessWidget {
           return Stack(
             children: [
               _buildGameContent(context, gameProvider),
+              GameControlsWidget(
+                onMoveLeft: gameProvider.moveLeft,
+                onMoveRight: gameProvider.moveRight,
+                onMoveDown: gameProvider.moveDown,
+                onRotate: gameProvider.rotate,
+                onHardDrop: gameProvider.hardDrop,
+                onHold: gameProvider.hold,
+                onStart: () {
+                  if (gameProvider.gameState == GameState.idle) {
+                    gameProvider.startGame();
+                  }
+                },
+                onPause: () {
+                  if (gameProvider.gameState == GameState.playing) {
+                    gameProvider.pauseGame();
+                  } else if (gameProvider.gameState == GameState.paused) {
+                    gameProvider.resumeGame();
+                  }
+                },
+              ),
               if (gameProvider.gameState == GameState.idle)
                 _buildStartOverlay(context, gameProvider),
               if (gameProvider.gameState == GameState.paused)
@@ -35,60 +55,45 @@ class GameScreen extends StatelessWidget {
 
   Widget _buildGameContent(BuildContext context, GameProvider gameProvider) {
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.only(top: 80.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                HoldBlockWidget(holdTetromino: gameProvider.holdTetromino),
-                const SizedBox(height: 20),
-                const ControlsGuideWidget(),
-              ],
-            ),
-            const SizedBox(width: 40),
-            BoardWidget(
-              board: gameProvider.board,
-              currentTetromino: gameProvider.currentTetromino,
-              ghostTetromino: gameProvider.ghostTetromino,
-            ),
-            const SizedBox(width: 40),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                NextBlockWidget(nextTetromino: gameProvider.nextTetromino),
-                const SizedBox(height: 20),
-                GameInfoWidget(
-                  score: gameProvider.score,
-                  level: gameProvider.level,
-                  lines: gameProvider.totalLines,
-                ),
-              ],
-            ),
-            GameControlsWidget(
-              onMoveLeft: gameProvider.moveLeft,
-              onMoveRight: gameProvider.moveRight,
-              onMoveDown: gameProvider.moveDown,
-              onRotate: gameProvider.rotate,
-              onHardDrop: gameProvider.hardDrop,
-              onHold: gameProvider.hold,
-              onStart: () {
-                if (gameProvider.gameState == GameState.idle) {
-                  gameProvider.startGame();
-                }
-              },
-              onPause: () {
-                if (gameProvider.gameState == GameState.playing) {
-                  gameProvider.pauseGame();
-                } else if (gameProvider.gameState == GameState.paused) {
-                  gameProvider.resumeGame();
-                }
-              },
-            ),
-          ],
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 40.0, horizontal: 20.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  HoldBlockWidget(holdTetromino: gameProvider.holdTetromino),
+                  const SizedBox(height: 20),
+                  const ControlsGuideWidget(),
+                ],
+              ),
+              const SizedBox(width: 40),
+              BoardWidget(
+                board: gameProvider.board,
+                currentTetromino: gameProvider.currentTetromino,
+                ghostTetromino: gameProvider.ghostTetromino,
+              ),
+              const SizedBox(width: 40),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  NextBlockWidget(nextTetromino: gameProvider.nextTetromino),
+                  const SizedBox(height: 20),
+                  GameInfoWidget(
+                    score: gameProvider.score,
+                    level: gameProvider.level,
+                    lines: gameProvider.totalLines,
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
