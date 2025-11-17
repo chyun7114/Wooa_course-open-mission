@@ -13,7 +13,7 @@ class WebSocketService {
 
   static const String _baseUrl = kDebugMode
       ? 'http://localhost:3000'
-      : 'https://distinctive-magdalene-chyun7114-f3225d28.koyeb.app';
+      : 'https://tetris-server.p-e.kr';
 
   bool get isConnected => _isConnected;
   IO.Socket? get socket => _socket;

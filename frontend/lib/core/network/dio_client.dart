@@ -14,7 +14,7 @@ class DioClient {
   static String get _baseUrl {
     // 프로덕션(릴리즈 모드): 실제 배포된 백엔드 URL
     if (kReleaseMode) {
-      return 'https://distinctive-magdalene-chyun7114-f3225d28.koyeb.app';
+      return 'https://tetris-server.p-e.kr';
     }
     // 개발 환경에서는 localhost 사용
     return 'http://localhost:3000';
