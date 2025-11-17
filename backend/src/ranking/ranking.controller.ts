@@ -1,34 +1,29 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { GetUser } from 'src/common/decorators/get-user.decorator';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RankingService } from './ranking.service';
-import { CreateRankingDto } from './dto/create-ranking.dto';
-import { UpdateRankingDto } from './dto/update-ranking.dto';
 
 @Controller('ranking')
 export class RankingController {
-  constructor(private readonly rankingService: RankingService) {}
+    constructor(private readonly rankingService: RankingService) {}
 
-  @Post()
-  create(@Body() createRankingDto: CreateRankingDto) {
-    return this.rankingService.create(createRankingDto);
-  }
+    @Post()
+    @UseGuards(JwtAuthGuard)
+    async upsertRanking(
+        @GetUser('id') memberId: number,
+        @Body('score') score: number,
+    ) {
+        return await this.rankingService.upsertRanking(memberId, score);
+    }
 
-  @Get()
-  findAll() {
-    return this.rankingService.findAll();
-  }
+    @Get('top')
+    async getTopRankings() {
+        return await this.rankingService.findTopRankings();
+    }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.rankingService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateRankingDto: UpdateRankingDto) {
-    return this.rankingService.update(+id, updateRankingDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.rankingService.remove(+id);
-  }
+    @Get('my')
+    @UseGuards(JwtAuthGuard)
+    async getMyRanking(@GetUser('id') memberId: number) {
+        return await this.rankingService.findByMember(memberId);
+    }
 }
