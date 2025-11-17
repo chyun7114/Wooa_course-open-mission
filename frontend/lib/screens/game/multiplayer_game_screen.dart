@@ -7,6 +7,7 @@ import 'package:frontend/core/services/game_state_tracker.dart';
 import 'package:provider/provider.dart';
 import '../../providers/game_provider.dart';
 import '../../providers/multiplayer_game_provider.dart';
+import '../../providers/room_waiting_provider.dart';
 import '../../widgets/multiplayer/my_game_area.dart';
 import '../../widgets/multiplayer/opponents_area.dart';
 
@@ -313,7 +314,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
               ),
               const SizedBox(height: 32),
               ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () => _returnToRoom(context),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue,
                   minimumSize: const Size(200, 50),
@@ -344,5 +345,26 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
       default:
         return '$rank위';
     }
+  }
+
+  void _returnToRoom(BuildContext context) {
+    try {
+      final gameProvider = context.read<GameProvider>();
+      if (gameProvider.gameState == GameState.playing) {
+        gameProvider.pauseGame();
+      }
+      gameProvider.restartGame();
+    } catch (e) {
+      debugPrint('GameProvider 정리 오류: $e');
+    }
+
+    try {
+      final roomProvider = context.read<RoomWaitingProvider>();
+      roomProvider.resetGameStarted();
+    } catch (e) {
+      debugPrint('RoomWaitingProvider 없음 또는 오류: $e');
+    }
+
+    Navigator.of(context).pop();
   }
 }
