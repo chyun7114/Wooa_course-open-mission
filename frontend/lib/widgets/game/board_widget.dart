@@ -45,26 +45,71 @@ class BoardWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final grid = _getMergedGrid();
-    const double cellSize = 25.0; // 고정된 셀 크기 사용
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.grey[900],
-        border: Border.all(color: Colors.white, width: 2),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: List.generate(
-          board.height,
-          (y) => Row(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 사용 가능한 공간 확인
+        final hasFiniteWidth = constraints.maxWidth.isFinite;
+        final hasFiniteHeight = constraints.maxHeight.isFinite;
+
+        // 멀티플레이: 제약 조건이 있는 경우 (Expanded 내부)
+        if (hasFiniteWidth && hasFiniteHeight) {
+          final availableWidth = constraints.maxWidth - 4; // border 제외
+          final availableHeight = constraints.maxHeight - 4; // border 제외
+
+          final cellWidth = availableWidth / board.width;
+          final cellHeight = availableHeight / board.height;
+
+          // 세로 높이를 최대한 활용하도록 cellHeight 우선 사용
+          // 단, 가로가 넘치지 않도록 제한
+          final cellSize = cellHeight * board.width <= availableWidth
+              ? cellHeight
+              : cellWidth;
+
+          return Container(
+            decoration: BoxDecoration(
+              color: Colors.grey[900],
+              border: Border.all(color: Colors.white, width: 2),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(
+                board.height,
+                (y) => Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(
+                    board.width,
+                    (x) => CellWidget(value: grid[y][x], size: cellSize),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
+
+        // 싱글플레이: 제약 조건이 없는 경우 고정 크기 사용
+        const double cellSize = 25.0;
+
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.grey[900],
+            border: Border.all(color: Colors.white, width: 2),
+          ),
+          child: Column(
             mainAxisSize: MainAxisSize.min,
             children: List.generate(
-              board.width,
-              (x) => CellWidget(value: grid[y][x], size: cellSize),
+              board.height,
+              (y) => Row(
+                mainAxisSize: MainAxisSize.min,
+                children: List.generate(
+                  board.width,
+                  (x) => CellWidget(value: grid[y][x], size: cellSize),
+                ),
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
