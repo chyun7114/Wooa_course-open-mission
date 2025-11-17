@@ -5,12 +5,15 @@ import { Member } from 'src/member/entity';
 
 export const Ranking = pgTable('ranking', {
     ...baseColumns,
+    memberId: integer('member_id')
+        .notNull()
+        .references(() => Member.id),
     score: integer('score').notNull(),
 });
 
-export const rankingRelations = relations(Member, ({ one }) => ({
+export const rankingRelations = relations(Ranking, ({ one }) => ({
     member: one(Member, {
-        fields: [Member.id],
+        fields: [Ranking.memberId],
         references: [Member.id],
     }),
 }));
