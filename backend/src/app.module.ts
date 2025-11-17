@@ -8,6 +8,7 @@ import { MemberModule } from './member/member.module';
 import { RoomModule } from './room/room.module';
 import { GameModule } from './game/game.module';
 import { LoggingInterceptor } from './common/interceptors';
+import { RankingModule } from './ranking/ranking.module';
 
 @Module({
     imports: [
@@ -19,6 +20,7 @@ import { LoggingInterceptor } from './common/interceptors';
         MemberModule,
         RoomModule,
         GameModule,
+        RankingModule,
     ],
     controllers: [AppController],
     providers: [
