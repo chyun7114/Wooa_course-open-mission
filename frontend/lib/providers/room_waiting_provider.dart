@@ -100,6 +100,12 @@ class RoomWaitingProvider extends ChangeNotifier {
   bool _isGameStarted = false;
   bool get isGameStarted => _isGameStarted;
 
+  // 게임 시작 플래그 리셋 (게임 종료 후 방으로 돌아올 때 사용)
+  void resetGameStarted() {
+    _isGameStarted = false;
+    notifyListeners();
+  }
+
   void _handleChatMessage(dynamic data) {
     final message = ChatMessage(
       id: DateTime.now().millisecondsSinceEpoch.toString(),

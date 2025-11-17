@@ -77,6 +77,7 @@ class _RoomWaitingScreenState extends State<RoomWaitingScreen> {
         final confirmed = await _showLeaveConfirmDialog();
         if (confirmed == true && mounted && _provider != null) {
           await _provider!.leaveRoom();
+          _provider!.resetGameStarted(); // 게임 시작 플래그 리셋
           if (mounted) {
             Navigator.of(context).pop();
           }
