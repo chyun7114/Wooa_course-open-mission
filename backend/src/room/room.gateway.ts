@@ -53,7 +53,13 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
             if (player) {
                 const result = this.roomService.leaveRoom(room.id, player.id);
 
-                if (!result.roomDeleted) {
+                if (result.roomDeleted) {
+                    // 방이 삭제되었으면 게임 상태도 정리
+                    this.gameService.deleteGame(room.id);
+                    this.logger.log(
+                        `Game state cleaned for deleted room ${room.id}`,
+                    );
+                } else {
                     this.server.to(room.id).emit('playerLeft', {
                         playerId: player.id,
                         nickname: player.nickname,
@@ -162,7 +168,13 @@ export class RoomGateway implements OnGatewayConnection, OnGatewayDisconnect {
         if (result.success) {
             client.leave(data.roomId);
 
-            if (!result.roomDeleted) {
+            // 방이 삭제되었으면 게임 상태도 정리
+            if (result.roomDeleted) {
+                this.gameService.deleteGame(data.roomId);
+                this.logger.log(
+                    `Game state cleaned for deleted room ${data.roomId}`,
+                );
+            } else {
                 const room = this.roomService.findRoom(data.roomId);
                 if (room) {
                     this.server.to(data.roomId).emit('playerLeft', {

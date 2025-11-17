@@ -141,15 +141,18 @@ export class GameGateway {
                 finalRanking: result.finalRanking,
             });
 
-            // 게임 종료 후 방 상태 초기화
+            // 게임 상태 완전히 정리
+            this.gameService.deleteGame(data.roomId);
+            this.logger.log(`Game state deleted for room ${data.roomId}`);
+
+            // 방 상태 초기화 (게임 종료)
             const room = this.roomService.findRoom(data.roomId);
             if (room) {
                 room.endGame();
                 this.logger.log(`Room ${data.roomId} game ended, state reset`);
-                
-                this.roomService.deleteRoom(data.roomId);
 
-                // 방 목록 업데이트 브로드캐스트
+                this.roomService.deleteRoom(data.roomId);
+                // 방 목록 업데이트
                 this.server.emit('roomListUpdated', {
                     rooms: this.roomService
                         .findAllRooms()

@@ -24,29 +24,34 @@ class RoomWaitingScreen extends StatefulWidget {
 }
 
 class _RoomWaitingScreenState extends State<RoomWaitingScreen> {
+  RoomWaitingProvider? _provider;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = context.read<RoomWaitingProvider>();
-      provider.joinRoom(widget.room, widget.userId);
+      if (!mounted) return;
+
+      _provider = context.read<RoomWaitingProvider>();
+      _provider!.joinRoom(widget.room, widget.userId);
 
       // 게임 시작 리스너
-      provider.addListener(_onProviderChanged);
+      _provider!.addListener(_onProviderChanged);
     });
   }
 
   @override
   void dispose() {
-    context.read<RoomWaitingProvider>().removeListener(_onProviderChanged);
+    _provider?.removeListener(_onProviderChanged);
     super.dispose();
   }
 
   void _onProviderChanged() {
-    final provider = context.read<RoomWaitingProvider>();
-    if (provider.isGameStarted && mounted) {
+    if (!mounted || _provider == null) return;
+
+    if (_provider!.isGameStarted) {
       // 게임 화면으로 전환
-      final players = provider.members
+      final players = _provider!.members
           .map((m) => {'id': m.id, 'nickname': m.username})
           .toList();
 
@@ -70,8 +75,8 @@ class _RoomWaitingScreenState extends State<RoomWaitingScreen> {
         if (didPop) return;
 
         final confirmed = await _showLeaveConfirmDialog();
-        if (confirmed == true && mounted) {
-          await context.read<RoomWaitingProvider>().leaveRoom();
+        if (confirmed == true && mounted && _provider != null) {
+          await _provider!.leaveRoom();
           if (mounted) {
             Navigator.of(context).pop();
           }
@@ -222,7 +227,7 @@ class _RoomWaitingScreenState extends State<RoomWaitingScreen> {
                   ),
                 )
                 .isReady,
-            onPressed: () => context.read<RoomWaitingProvider>().toggleReady(),
+            onPressed: () => _provider?.toggleReady(),
             isLoading: provider.isLoading,
           ),
       ],
@@ -232,19 +237,19 @@ class _RoomWaitingScreenState extends State<RoomWaitingScreen> {
   Widget _buildChatSection(RoomWaitingProvider provider) {
     return ChatPanel(
       messages: provider.messages,
-      onSendMessage: (message) =>
-          context.read<RoomWaitingProvider>().sendMessage(message),
+      onSendMessage: (message) => _provider?.sendMessage(message),
       currentUserId: provider.currentUserId ?? '',
     );
   }
 
   Future<void> _startGame() async {
-    final provider = context.read<RoomWaitingProvider>();
-    final success = await provider.startGame();
+    if (_provider == null) return;
 
-    if (mounted && success) {
+    final success = await _provider!.startGame();
+
+    if (mounted && success && _provider != null) {
       // 멀티플레이 게임 화면으로 이동
-      final players = provider.members
+      final players = _provider!.members
           .map((m) => {'id': m.id, 'nickname': m.username})
           .toList();
 

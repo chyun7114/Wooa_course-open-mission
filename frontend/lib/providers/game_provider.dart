@@ -7,12 +7,7 @@ import '../core/services/tetromino_generator.dart';
 import '../core/services/score_calculator.dart';
 import '../core/services/game_timer.dart';
 
-enum GameState {
-  idle,
-  playing,
-  paused,
-  gameOver,
-}
+enum GameState { idle, playing, paused, gameOver }
 
 class GameProvider with ChangeNotifier {
   late Board _board;
@@ -33,6 +28,7 @@ class GameProvider with ChangeNotifier {
   bool _holdUsed = false;
   bool _isMultiplayerMode = false;
   bool _isGameEnded = false;
+  bool _isDisposed = false;
 
   bool get isMultiplayerMode => _isMultiplayerMode;
   bool get isGameEnded => _isGameEnded;
@@ -54,7 +50,7 @@ class GameProvider with ChangeNotifier {
 
   final TetrominoGenerator _generator = TetrominoGenerator();
   final ScoreCalculator _scoreCalculator = ScoreCalculator();
-  
+
   int get score => _scoreCalculator.score;
   int get level => _scoreCalculator.level;
   int get totalLines => _scoreCalculator.totalLines;
@@ -67,28 +63,44 @@ class GameProvider with ChangeNotifier {
   }
 
   void startGame({bool isMultiplayer = false}) {
+    // 기존 타이머 정리
+    _timer.stop();
+
+    // 모든 상태 완전 초기화
     _isMultiplayerMode = isMultiplayer;
     _isGameEnded = false;
+    _isDisposed = false;
+    _gameState = GameState.idle;
+
+    // 보드 및 점수 초기화
     _board.reset();
     _scoreCalculator.reset();
-    
+
+    // 테트로미노 초기화
     _generator.initialize();
     _currentTetromino = _generator.getNext();
     _nextTetromino = _generator.peekNext();
     _holdTetromino = null;
     _holdUsed = false;
-    
+
+    // 게임 시작
     _gameState = GameState.playing;
     _startFallTimer();
-    
-    notifyListeners();
+
+    _safeNotifyListeners();
+  }
+
+  void _safeNotifyListeners() {
+    if (!_isDisposed) {
+      notifyListeners();
+    }
   }
 
   void pauseGame() {
     if (_gameState == GameState.playing) {
       _gameState = GameState.paused;
       _timer.stop();
-      notifyListeners();
+      _safeNotifyListeners();
     }
   }
 
@@ -96,7 +108,7 @@ class GameProvider with ChangeNotifier {
     if (_gameState == GameState.paused) {
       _gameState = GameState.playing;
       _startFallTimer();
-      notifyListeners();
+      _safeNotifyListeners();
     }
   }
 
@@ -121,7 +133,7 @@ class GameProvider with ChangeNotifier {
 
     if (_engine.canMoveDown(_currentTetromino!)) {
       _currentTetromino!.moveDown();
-      notifyListeners();
+      _safeNotifyListeners();
     } else {
       _lockCurrentTetromino();
     }
@@ -138,11 +150,11 @@ class GameProvider with ChangeNotifier {
 
   void _clearLinesAndUpdateScore() {
     final clearedLines = _board.clearFullLines();
-    
+
     if (clearedLines > 0) {
       final previousLevel = _scoreCalculator.level;
       _scoreCalculator.addLineScore(clearedLines);
-      
+
       if (_scoreCalculator.level > previousLevel) {
         _updateSpeed();
       }
@@ -159,18 +171,18 @@ class GameProvider with ChangeNotifier {
     _currentTetromino = _generator.getNext();
     _nextTetromino = _generator.peekNext();
 
-    if (_currentTetromino != null && 
+    if (_currentTetromino != null &&
         !_engine.isValidPosition(_currentTetromino!)) {
       _gameOver();
     }
 
-    notifyListeners();
+    _safeNotifyListeners();
   }
 
   void _gameOver() {
     _gameState = GameState.gameOver;
     _timer.stop();
-    notifyListeners();
+    _safeNotifyListeners();
   }
 
   // 멀티플레이 게임 종료 (순위 화면 표시용)
@@ -178,45 +190,53 @@ class GameProvider with ChangeNotifier {
     _isGameEnded = true;
     _gameState = GameState.gameOver;
     _timer.stop();
-    notifyListeners();
+    _safeNotifyListeners();
   }
 
   void moveLeft() {
-    if (_gameState != GameState.playing || _currentTetromino == null || _isGameEnded) {
+    if (_gameState != GameState.playing ||
+        _currentTetromino == null ||
+        _isGameEnded) {
       return;
     }
 
     if (_engine.canMoveLeft(_currentTetromino!)) {
       _currentTetromino!.moveLeft();
-      notifyListeners();
+      _safeNotifyListeners();
     }
   }
 
   void moveRight() {
-    if (_gameState != GameState.playing || _currentTetromino == null || _isGameEnded) {
+    if (_gameState != GameState.playing ||
+        _currentTetromino == null ||
+        _isGameEnded) {
       return;
     }
 
     if (_engine.canMoveRight(_currentTetromino!)) {
       _currentTetromino!.moveRight();
-      notifyListeners();
+      _safeNotifyListeners();
     }
   }
 
   void moveDown() {
-    if (_gameState != GameState.playing || _currentTetromino == null || _isGameEnded) {
+    if (_gameState != GameState.playing ||
+        _currentTetromino == null ||
+        _isGameEnded) {
       return;
     }
 
     if (_engine.canMoveDown(_currentTetromino!)) {
       _currentTetromino!.moveDown();
       _scoreCalculator.addSoftDropScore();
-      notifyListeners();
+      _safeNotifyListeners();
     }
   }
 
   void hardDrop() {
-    if (_gameState != GameState.playing || _currentTetromino == null || _isGameEnded) {
+    if (_gameState != GameState.playing ||
+        _currentTetromino == null ||
+        _isGameEnded) {
       return;
     }
 
@@ -228,11 +248,13 @@ class GameProvider with ChangeNotifier {
 
     _scoreCalculator.addHardDropScore(dropDistance);
     _lockCurrentTetromino();
-    notifyListeners();
+    _safeNotifyListeners();
   }
 
   void rotate() {
-    if (_gameState != GameState.playing || _currentTetromino == null || _isGameEnded) {
+    if (_gameState != GameState.playing ||
+        _currentTetromino == null ||
+        _isGameEnded) {
       return;
     }
 
@@ -241,7 +263,7 @@ class GameProvider with ChangeNotifier {
 
     if (_engine.isValidPosition(temp)) {
       _currentTetromino!.rotateClockwise();
-      notifyListeners();
+      _safeNotifyListeners();
     } else {
       _tryWallKick(temp);
     }
@@ -249,30 +271,33 @@ class GameProvider with ChangeNotifier {
 
   void _tryWallKick(Tetromino rotated) {
     final offsets = [1, -1, 2, -2];
-    
+
     for (final offset in offsets) {
       final temp = rotated.copy();
       temp.x += offset;
-      
+
       if (_engine.isValidPosition(temp)) {
         _currentTetromino!.rotateClockwise();
         _currentTetromino!.x += offset;
-        notifyListeners();
+        _safeNotifyListeners();
         return;
       }
     }
-    
+
     final tempUp = rotated.copy();
     tempUp.y -= 1;
     if (_engine.isValidPosition(tempUp)) {
       _currentTetromino!.rotateClockwise();
       _currentTetromino!.y -= 1;
-      notifyListeners();
+      _safeNotifyListeners();
     }
   }
 
   void hold() {
-    if (_gameState != GameState.playing || _currentTetromino == null || _holdUsed || _isGameEnded) {
+    if (_gameState != GameState.playing ||
+        _currentTetromino == null ||
+        _holdUsed ||
+        _isGameEnded) {
       return;
     }
 
@@ -292,11 +317,12 @@ class GameProvider with ChangeNotifier {
     }
 
     _holdUsed = true;
-    notifyListeners();
+    _safeNotifyListeners();
   }
 
   @override
   void dispose() {
+    _isDisposed = true;
     _timer.dispose();
     super.dispose();
   }

@@ -103,9 +103,11 @@ class MultiplayerGameProvider with ChangeNotifier {
   MultiplayerGameState? _gameState;
   String? _myPlayerId;
   int _incomingAttackLines = 0;
+  bool _isDisposed = false;
+  bool _isInitialized = false; // 초기화 가드
 
   MultiplayerGameProvider(this._wsService, {GameProvider? gameProvider})
-      : _gameProvider = gameProvider;
+    : _gameProvider = gameProvider;
 
   MultiplayerGameState? get gameState => _gameState;
   String? get myPlayerId => _myPlayerId;
@@ -137,7 +139,23 @@ class MultiplayerGameProvider with ChangeNotifier {
     String myPlayerId,
     List<Map<String, dynamic>> players,
   ) {
+    // 중복 초기화 방지
+    if (_isInitialized && _gameState?.roomId == roomId) {
+      debugPrint(
+        '⚠️ MultiplayerGameProvider already initialized for room: $roomId',
+      );
+      return;
+    }
+
+    debugPrint('🔄 MultiplayerGameProvider initGame for room: $roomId');
+
+    // 이전 게임 상태 완전히 정리
+    _cleanupPreviousGame();
+    _isDisposed = false;
+    _isInitialized = true;
+
     _myPlayerId = myPlayerId;
+    _incomingAttackLines = 0;
 
     final playerStates = <String, PlayerGameState>{};
     for (var player in players) {
@@ -157,15 +175,75 @@ class MultiplayerGameProvider with ChangeNotifier {
     _gameState = MultiplayerGameState(roomId: roomId, players: playerStates);
 
     _setupListeners();
-    
+
     // notifyListeners를 다음 프레임에서 호출
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      notifyListeners();
+      if (!_isDisposed) {
+        notifyListeners();
+      }
     });
+  }
+
+  /// 이전 게임 상태 정리
+  void _cleanupPreviousGame() {
+    if (_gameState != null) {
+      debugPrint('🧹 Cleaning up previous game state');
+      // WebSocket 리스너 정리
+      _wsService.off('gameStarted');
+      _wsService.off('gameStateUpdated');
+      _wsService.off('attacked');
+      _wsService.off('playerGameOver');
+      _wsService.off('gameEnded');
+    }
+
+    _gameState = null;
+    _myPlayerId = null;
+    _incomingAttackLines = 0;
+    _isInitialized = false; // 초기화 플래그 리셋
+  }
+
+  /// 안전하게 notifyListeners 호출
+  void _safeNotifyListeners() {
+    if (!_isDisposed) {
+      notifyListeners();
+    }
   }
 
   /// WebSocket 리스너 설정
   void _setupListeners() {
+    // 기존 리스너 완전히 제거 (중복 방지)
+    _wsService.off('gameStarted');
+    _wsService.off('gameStateUpdated');
+    _wsService.off('attacked');
+    _wsService.off('playerGameOver');
+    _wsService.off('gameEnded');
+
+    // 게임 시작 이벤트
+    _wsService.on('gameStarted', (data) {
+      debugPrint('🎮 Game started event received');
+
+      // GameProvider를 통해 실제 게임 시작
+      final gameProvider = _gameProvider;
+      if (gameProvider != null) {
+        debugPrint('✅ Starting game via GameProvider');
+        gameProvider.startGame(isMultiplayer: true);
+
+        // 초기 게임 상태 전송
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!_isDisposed) {
+            updateGameState(
+              score: gameProvider.score,
+              level: gameProvider.level,
+              linesCleared: gameProvider.totalLines,
+              board: gameProvider.board.grid,
+            );
+          }
+        });
+      } else {
+        debugPrint('❌ GameProvider is null, cannot start game!');
+      }
+    });
+
     // 게임 상태 업데이트
     _wsService.on('gameStateUpdated', (data) {
       if (data == null || _gameState == null) return;
@@ -199,9 +277,7 @@ class MultiplayerGameProvider with ChangeNotifier {
           players: Map.from(_gameState!.players)..[playerId] = updated,
         );
 
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          notifyListeners();
-        });
+        _safeNotifyListeners();
       }
     });
 
@@ -215,17 +291,13 @@ class MultiplayerGameProvider with ChangeNotifier {
 
       if (targetId == _myPlayerId && attackLines > 0) {
         _incomingAttackLines += attackLines;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          notifyListeners();
-        });
+        _safeNotifyListeners();
 
         // 3초 후 공격 표시 제거
         Future.delayed(const Duration(seconds: 3), () {
-          if (_incomingAttackLines >= attackLines) {
+          if (!_isDisposed && _incomingAttackLines >= attackLines) {
             _incomingAttackLines -= attackLines;
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              notifyListeners();
-            });
+            _safeNotifyListeners();
           }
         });
       }
@@ -248,9 +320,7 @@ class MultiplayerGameProvider with ChangeNotifier {
               rank: rank ?? current.rank,
             ),
         );
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          notifyListeners();
-        });
+        _safeNotifyListeners();
       }
     });
 
@@ -265,23 +335,21 @@ class MultiplayerGameProvider with ChangeNotifier {
         final ranking = rankingData
             .map((r) => PlayerGameState.fromJson(r as Map<String, dynamic>))
             .toList();
-        
+
         debugPrint('🏆 최종 순위 ${ranking.length}명');
-        
+
         _gameState = _gameState!.copyWith(
           isGameEnded: true,
           finalRanking: ranking,
         );
-        
+
         // GameProvider도 종료 상태로 변경
-        if (_gameProvider != null) {
+        if (_gameProvider != null && !_isDisposed) {
           _gameProvider.endMultiplayerGame();
           debugPrint('🛑 GameProvider 게임 종료 처리');
         }
-        
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          notifyListeners();
-        });
+
+        _safeNotifyListeners();
       }
     });
   }
@@ -344,12 +412,9 @@ class MultiplayerGameProvider with ChangeNotifier {
   }
 
   /// Mock 데이터 설정 (프리뷰용)
-  void setMockData({
-    required int opponentCount,
-    bool isGameEnded = false,
-  }) {
+  void setMockData({required int opponentCount, bool isGameEnded = false}) {
     final players = <String, PlayerGameState>{};
-    
+
     // 내 플레이어 (1등)
     players['player-1'] = PlayerGameState(
       playerId: 'player-1',
@@ -379,13 +444,13 @@ class MultiplayerGameProvider with ChangeNotifier {
     }
 
     _myPlayerId = 'player-1';
-    
+
     List<PlayerGameState>? ranking;
     if (isGameEnded) {
       ranking = players.values.toList();
       ranking.sort((a, b) => a.rank.compareTo(b.rank));
     }
-    
+
     _gameState = MultiplayerGameState(
       roomId: 'preview-room',
       players: players,
@@ -399,7 +464,7 @@ class MultiplayerGameProvider with ChangeNotifier {
   /// Mock 보드 생성
   List<List<int>> _createMockBoard() {
     final board = List.generate(20, (_) => List.filled(10, 0));
-    
+
     // 하단에 랜덤하게 블록 배치
     for (int row = 15; row < 20; row++) {
       for (int col = 0; col < 10; col++) {
@@ -408,17 +473,15 @@ class MultiplayerGameProvider with ChangeNotifier {
         }
       }
     }
-    
+
     return board;
   }
 
   /// 초기화
   @override
   void dispose() {
-    _wsService.off('gameStateUpdated');
-    _wsService.off('attacked');
-    _wsService.off('playerGameOver');
-    _wsService.off('gameEnded');
+    _isDisposed = true;
+    _cleanupPreviousGame();
     super.dispose();
   }
 }
