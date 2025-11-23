@@ -140,7 +140,6 @@ Wooa_course-open-mission/
 - [x] hold 기능
 - [x] 레벨/속도, 일시정지
 - [x] 고스트 블럭 추가(떨어지는 위치가 보인다)
-- [ ] 소리 등 부가기능
 
 **Back-end (NestJS)**
 
@@ -217,9 +216,7 @@ docs(readme): Update project structure documentation
 - [ ] 사운드 효과 및 BGM 추가
 - [ ] 모바일 앱 지원 (Android/iOS)
 - [ ] 커스텀 게임 설정 (속도, 블록 종류 등)
-- [ ] 친구 시스템 및 초대 기능
-- [ ] 리플레이 기능
-- [ ] 토너먼트 모드
+- [ ] 멀티플레이 공격 기능 추가
 
 ## 👥 기여자
 
