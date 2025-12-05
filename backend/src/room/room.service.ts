@@ -1,6 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Room } from './entity';
 import { v4 as uuidv4 } from 'uuid';
+import {
+    AlreadyInGameException,
+    InvalidPasswordException,
+    NotAllPlayersReadyException,
+    NotHostException,
+    RoomIsFullException,
+    RoomNotFoundException,
+} from './exceptions/room.exception';
 
 @Injectable()
 export class RoomService {
@@ -34,8 +42,12 @@ export class RoomService {
         return room;
     }
 
-    findRoom(roomId: string): Room | undefined {
-        return this.rooms.get(roomId);
+    findRoom(roomId: string): Room {
+        const room = this.rooms.get(roomId);
+        if (!room) {
+            throw new RoomNotFoundException();
+        }
+        return room;
     }
 
     findAllRooms(): Room[] {
@@ -50,32 +62,24 @@ export class RoomService {
         nickname: string,
         socketId: string,
         password?: string,
-    ): { success: boolean; message?: string; room?: Room } {
-        const room = this.rooms.get(roomId);
-
-        if (!room) {
-            return { success: false, message: '존재하지 않는 방입니다.' };
-        }
+    ): Room {
+        const room = this.findRoom(roomId);
 
         if (room.isPlaying) {
-            return { success: false, message: '이미 게임이 진행 중입니다.' };
+            throw new AlreadyInGameException();
         }
 
         if (room.isFull()) {
-            return { success: false, message: '방이 가득 찼습니다.' };
+            throw new RoomIsFullException();
         }
 
         if (room.isPrivate && room.password !== password) {
-            return { success: false, message: '비밀번호가 일치하지 않습니다.' };
+            throw new InvalidPasswordException();
         }
 
-        const added = room.addPlayer(playerId, nickname, socketId);
-        if (!added) {
-            return { success: false, message: '방 입장에 실패했습니다.' };
-        }
-
+        room.addPlayer(playerId, nickname, socketId);
         this.logger.log(`Player ${nickname} joined room ${roomId}`);
-        return { success: true, room };
+        return room;
     }
 
     leaveRoom(
@@ -86,11 +90,7 @@ export class RoomService {
         roomDeleted: boolean;
         newHostId?: string;
     } {
-        const room = this.rooms.get(roomId);
-
-        if (!room) {
-            return { success: false, roomDeleted: false };
-        }
+        const room = this.findRoom(roomId);
 
         const wasHost = room.hostId === playerId;
         room.removePlayer(playerId);
@@ -114,52 +114,27 @@ export class RoomService {
     }
 
     toggleReady(roomId: string, playerId: string): boolean {
-        const room = this.rooms.get(roomId);
-        if (!room) {
-            return false;
-        }
-
+        const room = this.findRoom(roomId);
         return room.toggleReady(playerId);
     }
 
-    startGame(
-        roomId: string,
-        playerId: string,
-    ): {
-        success: boolean;
-        message?: string;
-    } {
-        const room = this.rooms.get(roomId);
-
-        if (!room) {
-            return { success: false, message: '존재하지 않는 방입니다.' };
-        }
+    startGame(roomId: string, playerId: string): void {
+        const room = this.findRoom(roomId);
 
         if (room.hostId !== playerId) {
-            return {
-                success: false,
-                message: '방장만 게임을 시작할 수 있습니다.',
-            };
+            throw new NotHostException();
         }
 
         if (!room.canStartGame()) {
-            return {
-                success: false,
-                message: '모든 플레이어가 준비되지 않았습니다.',
-            };
+            throw new NotAllPlayersReadyException();
         }
 
         room.startGame();
         this.logger.log(`Game started in room ${roomId}`);
-        return { success: true };
     }
 
     endGame(roomId: string): boolean {
-        const room = this.rooms.get(roomId);
-        if (!room) {
-            return false;
-        }
-
+        const room = this.findRoom(roomId);
         room.endGame();
         this.logger.log(`Game ended in room ${roomId}`);
         return true;

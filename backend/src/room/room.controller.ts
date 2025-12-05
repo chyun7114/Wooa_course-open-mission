@@ -44,11 +44,6 @@ export class RoomController {
         @Param('roomId') roomId: string,
     ): CommonResponse<RoomDetailResponseDto> {
         const room = this.roomService.findRoom(roomId);
-
-        if (!room) {
-            return CommonResponse.fail(404, '방을 찾을 수 없습니다.');
-        }
-
         return CommonResponse.success(
             room.toDetailResponse(),
             '방 정보를 조회했습니다.',

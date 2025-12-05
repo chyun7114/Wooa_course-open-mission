@@ -1,21 +1,25 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
 
+interface ErrorCode {
+    code: number;
+    message: string;
+}
+
 export class DomainException extends HttpException {
     constructor(
-        code: number,
-        message: string | Record<string, any>,
+        error: ErrorCode,
         public readonly errorCode?: string,
         public readonly path?: string,
     ) {
         super(
             {
-                errorCode: errorCode ?? HttpStatus[code],
-                message,
+                errorCode: errorCode ?? HttpStatus[error.code],
+                message: error.message,
                 path: path ?? null,
                 timestamp: new Date().toISOString(),
             },
-            code,
+            error.code,
         );
-        Error.captureStackTrace(this, new.target); // BaseException의 생성자 호출은 스택 트레이스에서 제외
+        Error.captureStackTrace(this, new.target);
     }
 }
